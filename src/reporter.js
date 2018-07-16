@@ -93,12 +93,15 @@ async function doShapeShift () {
     const year = date.getFullYear()
     const month = pad(date.getMonth() + 1, 2)
     const day = pad(date.getDate(), 2)
+    const hour = pad(date.getHours(), 2)
 
     let idx
     if (interval === 'day') {
       idx = `${year}-${month}-${day}`
     } else if (interval === 'month') {
       idx = `${year}-${month}`
+    } else if (interval === 'hour') {
+      idx = `${year}-${month}-${day}-${hour}`
     } else {
       idx = `${year}-${month}`
     }
