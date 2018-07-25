@@ -25,10 +25,26 @@ type ShapeShiftTx = {
   shiftRate: string
 }
 
-function pad(num, size) {
+function pad (num, size) {
   let s = num + '';
   while (s.length < size) {
     s = '0' + s
+  }
+  return s
+}
+
+function padRight (num, size) {
+  let s = num + '';
+  while (s.length < size) {
+    s = s + '0'
+  }
+  return s
+}
+
+function padSpace (num, size) {
+  let s = num + '';
+  while (s.length < size) {
+    s = ' ' + s
   }
   return s
 }
@@ -81,6 +97,7 @@ async function doShapeShift () {
   console.log('Number of transactions:' + jsonObj.length.toString())
 
   let txCountMap: {[date: string]: number} = {}
+  let avgMap: {[date: string]: number} = {}
   let amountMap:  {[date: string]: string} = {}
   let revMap: {[date: string]: string} = {}
   let amountTotal = '0'
@@ -110,6 +127,7 @@ async function doShapeShift () {
       txCountMap[idx] = 0
       amountMap[idx] = '0'
       revMap[idx] = '0'
+      avgMap[idx] = '0'
     }
     txCountMap[idx]++
 
@@ -126,6 +144,7 @@ async function doShapeShift () {
     amountMap[idx] = bns.add(amountMap[idx], amountBtc)
     const rev = bns.mul(amountBtc, '0.0025')
     revMap[idx] = bns.add(revMap[idx], rev)
+    avgMap[idx] = bns.div(amountMap[idx], txCountMap[idx].toString(), 4)
 
     amountTotal = bns.add(amountTotal, amountBtc)
     grandTotalAmount = bns.add(grandTotalAmount, amountBtc)
@@ -145,8 +164,18 @@ async function doShapeShift () {
       // revTotal = '0'
     // }
   }
-  console.log(txCountMap)
-  console.log(amountMap)
+
+  for (const d in txCountMap) {
+    if (txCountMap.hasOwnProperty(d)) {
+      const c = padSpace(txCountMap[d], 3)
+      const a = padRight(avgMap[d], 6)
+      console.log(`${d} txs:${c} - avg:${a} - amt:${amountMap[d]}`)
+    }
+  }
+
+  // console.log(txCountMap)
+  // console.log(amountMap)
+  // console.log(avgMap)
   console.log('avg tx size: ' + (parseInt(grandTotalAmount) / jsonObj.length).toString())
 }
 
