@@ -49,28 +49,91 @@ function padSpace (num, size) {
   return s
 }
 
-const ratePairs: {[pair: string]: string} = {}
+let ratePairs: {[date: string]: {[code: string]: string}} = {}
+let ratesLoaded = false
+const btcRates = {}
 
-async function getRate (pair: string): string {
-  if (ratePairs[pair] !== undefined) {
-    return ratePairs[pair]
-  }
-  const request = `https://shapeshift.io/rate/${pair}`
+type GetRateOptions = {
+  from: string,
+  to: string,
+  year: string,
+  month: string,
+  day: string
+}
 
+async function queryCoinApi (currencyCode: string, date: string) {
+  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
+  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T12:00:00.0000000Z`
+  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
+  console.log(url)
   let response
   try {
-    response = await fetch(request)
+    response = await fetch(url,
+      {
+        method: 'GET',
+        headers: {
+          'X-CoinAPI-Key': config.coinApiKey
+        }
+      })
   } catch (e) {
     console.log(e)
-    return ''
+    throw e
   }
-  let jsonObj = await response.json()
+  const jsonObj = await response.json()
+  return jsonObj.rate.toString()
+}
 
-  if (typeof jsonObj.rate === 'string') {
-    ratePairs[pair] = jsonObj.rate
-    return ratePairs[pair]
+
+async function getPairCached (currencyCode: string, date: string) {
+  if (!ratesLoaded) {
+    try {
+      ratePairs = js.readFileSync('./ratePairs.json')
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  ratesLoaded = true
+
+  let rate
+  if (ratePairs[date] && ratePairs[date][currencyCode]) {
+    rate = ratePairs[date][currencyCode]
   } else {
-    return ''
+    if (!ratePairs[date]) {
+      ratePairs[date] = {}
+    }
+    rate = await queryCoinApi(currencyCode, date)
+    ratePairs[date][currencyCode] = rate
+    js.writeFileSync('./ratePairs.json', ratePairs)
+  }
+  return rate
+}
+
+async function getRate (opts: GetRateOptions): string {
+  const { from, to, year, month, day } = opts
+  const date = `${year}-${month}-${day}`
+
+  let fromToUsd
+  let toToUsd
+  try {
+    fromToUsd = await getPairCached(from.toUpperCase(), date)
+    toToUsd = await getPairCached(to.toUpperCase(), date)
+    const finalRate = bns.div(fromToUsd, toToUsd, 8)
+    return finalRate
+  } catch (e) {
+    try {
+      const pair = `${from}_${to}`
+      if (btcRates[pair]) {
+        return btcRates[pair]
+      }
+      const request = `https://shapeshift.io/rate/${pair}`
+      const response = await fetch(request)
+      const jsonObj = await response.json()
+      const rate = jsonObj.rate.toString()
+      btcRates[pair] = rate
+      return rate
+    } catch (e) {
+      throw e
+    }
   }
 }
 
@@ -79,19 +142,23 @@ function daydiff(first, second) {
 }
 
 async function doShapeShift () {
-  const apiKey = config.shapeShiftApiKey
-  const request = `https://shapeshift.io/txbyapikey/${apiKey}`
-  console.log(request)
-  let response
   let jsonObj = []
-  while (jsonObj.length === 0) {
-    try {
-      response = await fetch(request)
-    } catch (e) {
-      console.log(e)
-      return
+  if (process.argv && process.argv[2]) {
+    jsonObj = js.readFileSync(process.argv[2])
+  } else {
+    const apiKey = config.shapeShiftApiKey
+    const request = `https://shapeshift.io/txbyapikey/${apiKey}`
+    console.log(request)
+    let response
+    while (jsonObj.length === 0) {
+      try {
+        response = await fetch(request)
+      } catch (e) {
+        console.log(e)
+        return
+      }
+      jsonObj = await response.json()
     }
-    jsonObj = await response.json()
   }
 
   console.log('Number of transactions:' + jsonObj.length.toString())
@@ -135,10 +202,9 @@ async function doShapeShift () {
     if (tx.inputCurrency === 'BTC') {
       amountBtc = tx.inputAmount.toString()
     } else {
-      let rate = rates[`${tx.inputCurrency}_btc`]
-      if (!rate) {
-        rate = await getRate(`${tx.inputCurrency}_btc`)
-      }
+      const rate = await getRate({
+        from: tx.inputCurrency, to:'BTC', year: year.toString(), month, day
+      })
       amountBtc = bns.mul(rate, tx.inputAmount.toString())
     }
     amountMap[idx] = bns.add(amountMap[idx], amountBtc)
