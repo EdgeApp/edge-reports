@@ -1,3 +1,7 @@
 {
-    "shapeShiftApiKey": "xxx"
+    "timeInterval": "month",
+    "endDate": "2018-01",
+    "coinApiKey": "xxxx",
+    "shapeShiftApiKey": "xxxx",
+    "libertyXApiKey": "xxx"
 }

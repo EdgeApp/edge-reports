@@ -3,8 +3,7 @@
 const fetch = require('node-fetch')
 const js = require('jsonfile')
 const { bns } = require('biggystring')
-// const sleep = require('await-sleep')
-// const fs = require('fs')
+const { sprintf } = require('sprintf-js')
 
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
@@ -51,7 +50,8 @@ function padSpace (num, size) {
 
 let ratePairs: {[date: string]: {[code: string]: string}} = {}
 let ratesLoaded = false
-const btcRates = {}
+let btcRates = {}
+let btcRatesLoaded = false
 
 type GetRateOptions = {
   from: string,
@@ -111,17 +111,28 @@ async function getPairCached (currencyCode: string, date: string) {
 async function getRate (opts: GetRateOptions): string {
   const { from, to, year, month, day } = opts
   const date = `${year}-${month}-${day}`
+  const pair = `${from}_${to}`
 
   let fromToUsd
   let toToUsd
   try {
+    if (btcRates[pair]) {
+      throw new Error('blah')
+    }
     fromToUsd = await getPairCached(from.toUpperCase(), date)
     toToUsd = await getPairCached(to.toUpperCase(), date)
     const finalRate = bns.div(fromToUsd, toToUsd, 8)
     return finalRate
   } catch (e) {
     try {
-      const pair = `${from}_${to}`
+      if (!btcRatesLoaded) {
+        try {
+          btcRates = js.readFileSync('./btcRates.json')
+        } catch (e) {
+          console.log(e)
+        }
+        btcRatesLoaded = true
+      }
       if (btcRates[pair]) {
         return btcRates[pair]
       }
@@ -130,6 +141,7 @@ async function getRate (opts: GetRateOptions): string {
       const jsonObj = await response.json()
       const rate = jsonObj.rate.toString()
       btcRates[pair] = rate
+      js.writeFileSync('./btcRates.json', btcRates)
       return rate
     } catch (e) {
       throw e
@@ -164,8 +176,10 @@ async function doShapeShift () {
   console.log('Number of transactions:' + jsonObj.length.toString())
 
   let txCountMap: {[date: string]: number} = {}
-  let avgMap: {[date: string]: number} = {}
-  let amountMap:  {[date: string]: string} = {}
+  let avgBtcMap: {[date: string]: string} = {}
+  let avgUsdMap: {[date: string]: string} = {}
+  let amountBtcMap:  {[date: string]: string} = {}
+  let amountUsdMap:  {[date: string]: string} = {}
   let revMap: {[date: string]: string} = {}
   let amountTotal = '0'
   let revTotal = '0'
@@ -190,11 +204,17 @@ async function doShapeShift () {
       idx = `${year}-${month}`
     }
 
+    if (idx.startsWith(config.endDate)) {
+      break
+    }
+
     if (txCountMap[idx] === undefined) {
       txCountMap[idx] = 0
-      amountMap[idx] = '0'
+      amountBtcMap[idx] = '0'
+      amountUsdMap[idx] = '0'
       revMap[idx] = '0'
-      avgMap[idx] = '0'
+      avgBtcMap[idx] = '0'
+      avgUsdMap[idx] = '0'
     }
     txCountMap[idx]++
 
@@ -207,10 +227,14 @@ async function doShapeShift () {
       })
       amountBtc = bns.mul(rate, tx.inputAmount.toString())
     }
-    amountMap[idx] = bns.add(amountMap[idx], amountBtc)
+    const btcRate = await getPairCached('BTC', `${year.toString()}-${month}-${day}`)
+    const amountUsd = bns.mul(amountBtc, btcRate)
+    amountBtcMap[idx] = bns.add(amountBtcMap[idx], amountBtc)
+    amountUsdMap[idx] = bns.add(amountUsdMap[idx], amountUsd)
     const rev = bns.mul(amountBtc, '0.0025')
     revMap[idx] = bns.add(revMap[idx], rev)
-    avgMap[idx] = bns.div(amountMap[idx], txCountMap[idx].toString(), 4)
+    avgBtcMap[idx] = bns.div(amountBtcMap[idx], txCountMap[idx].toString(), 4)
+    avgUsdMap[idx] = bns.div(amountUsdMap[idx], txCountMap[idx].toString(), 2)
 
     amountTotal = bns.add(amountTotal, amountBtc)
     grandTotalAmount = bns.add(grandTotalAmount, amountBtc)
@@ -219,12 +243,12 @@ async function doShapeShift () {
     // if (daydiff(tx.timestamp * 1000, dateNow) > 60) {
       // dateNow = tx.timestamp * 1000
       // console.log('txCountMap:', txCountMap)
-      // console.log('amountMap:', amountMap)
+      // console.log('amountBtcMap:', amountBtcMap)
       // console.log('revMap:', revMap)
       // console.log('amountTotal: ' + amountTotal)
       // console.log('revTotal: ' + revTotal)
       // txCountMap = {}
-      // amountMap = {}
+      // amountBtcMap = {}
       // revMap = {}
       // amountTotal = '0'
       // revTotal = '0'
@@ -233,15 +257,21 @@ async function doShapeShift () {
 
   for (const d in txCountMap) {
     if (txCountMap.hasOwnProperty(d)) {
-      const c = padSpace(txCountMap[d], 3)
-      const a = padRight(avgMap[d], 6)
-      console.log(`${d} txs:${c} - avg:${a} - amt:${amountMap[d]}`)
+      let avgBtc = bns.div(avgBtcMap[d], '1', 6)
+      let avgUsd = bns.div(avgUsdMap[d], '1', 2)
+      let amtBtc = bns.div(amountBtcMap[d], '1', 6)
+      let amtUsd = bns.div(amountUsdMap[d], '1', 2)
+      // const c = padSpace(txCountMap[d], 3)
+
+      const l = sprintf('%s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC', d, txCountMap[d], parseFloat(avgUsd), parseFloat(avgBtc), parseFloat(amtUsd), parseFloat(amtBtc))
+      console.log(l)
+      // console.log(`${d} txs:${c} - avgUSD:${avgUsd} - avgBTC:${avgBtc} - amtUSD:${amtUsd} - amtBTC:${amtBtc}`)
     }
   }
 
   // console.log(txCountMap)
-  // console.log(amountMap)
-  // console.log(avgMap)
+  // console.log(amountBtcMap)
+  // console.log(avgBtcMap)
   console.log('avg tx size: ' + (parseInt(grandTotalAmount) / jsonObj.length).toString())
 }
 
