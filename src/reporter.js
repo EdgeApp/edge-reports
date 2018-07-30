@@ -170,6 +170,7 @@ async function doShapeShift () {
         return
       }
       jsonObj = await response.json()
+      js.writeFileSync('./ssRaw.json', jsonObj)
     }
   }
 
@@ -192,6 +193,7 @@ async function doShapeShift () {
     const month = pad(date.getMonth() + 1, 2)
     const day = pad(date.getDate(), 2)
     const hour = pad(date.getHours(), 2)
+    const mins = pad(date.getMinutes(), 2)
 
     let idx
     if (interval === 'day') {
@@ -200,6 +202,8 @@ async function doShapeShift () {
       idx = `${year}-${month}`
     } else if (interval === 'hour') {
       idx = `${year}-${month}-${day}-${hour}`
+    } else if (interval === 'mins') {
+      idx = `${year}-${month}-${day}-${hour}-${mins}`
     } else {
       idx = `${year}-${month}`
     }
@@ -317,6 +321,7 @@ async function doLibertyX () {
 async function main () {
   await doShapeShift()
   await doLibertyX()
+  console.log(new Date(Date.now()))
 }
 
 main()
