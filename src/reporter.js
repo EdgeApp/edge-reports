@@ -188,6 +188,9 @@ async function doShapeShift () {
   let grandTotalAmount = '0'
   const rates = {}
   for (const tx: ShapeShiftTx of jsonObj) {
+    if (tx.status !== 'complete') {
+      continue
+    }
     const date: Date = new Date(tx.timestamp * 1000)
     const year = date.getFullYear()
     const month = pad(date.getMonth() + 1, 2)
