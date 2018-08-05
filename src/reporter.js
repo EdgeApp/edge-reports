@@ -182,14 +182,13 @@ async function doShapeShift () {
   let txCountMap: {[date: string]: number} = {}
   let avgBtcMap: {[date: string]: string} = {}
   let avgUsdMap: {[date: string]: string} = {}
+  let currencyAmountMap : {[date: string]: {[currencyCode: string]: string}} = {}
   let amountBtcMap:  {[date: string]: string} = {}
   let amountUsdMap:  {[date: string]: string} = {}
   let revMap: {[date: string]: string} = {}
   let amountTotal = '0'
   let revTotal = '0'
-  let dateNow = Date.now()
   let grandTotalAmount = '0'
-  const rates = {}
   for (const tx: ShapeShiftTx of jsonObj) {
     if (tx.status !== 'complete') {
       continue
@@ -225,6 +224,7 @@ async function doShapeShift () {
       revMap[idx] = '0'
       avgBtcMap[idx] = '0'
       avgUsdMap[idx] = '0'
+      currencyAmountMap[idx] = {}
     }
     txCountMap[idx]++
 
@@ -250,19 +250,18 @@ async function doShapeShift () {
     grandTotalAmount = bns.add(grandTotalAmount, amountBtc)
     revTotal = bns.add(revTotal, rev)
 
-    // if (daydiff(tx.timestamp * 1000, dateNow) > 60) {
-      // dateNow = tx.timestamp * 1000
-      // console.log('txCountMap:', txCountMap)
-      // console.log('amountBtcMap:', amountBtcMap)
-      // console.log('revMap:', revMap)
-      // console.log('amountTotal: ' + amountTotal)
-      // console.log('revTotal: ' + revTotal)
-      // txCountMap = {}
-      // amountBtcMap = {}
-      // revMap = {}
-      // amountTotal = '0'
-      // revTotal = '0'
-    // }
+    if (currencyAmountMap[idx][tx.inputCurrency] === undefined) {
+      currencyAmountMap[idx][tx.inputCurrency] = '0'
+    }
+
+    if (currencyAmountMap[idx][tx.outputCurrency] === undefined) {
+      currencyAmountMap[idx][tx.outputCurrency] = '0'
+    }
+
+    const halfAmount = bns.div(amountUsd, '2', 2)
+
+    currencyAmountMap[idx][tx.inputCurrency] = bns.add(currencyAmountMap[idx][tx.inputCurrency], halfAmount)
+    currencyAmountMap[idx][tx.outputCurrency] = bns.add(currencyAmountMap[idx][tx.outputCurrency], halfAmount)
   }
 
   for (const d in txCountMap) {
@@ -273,7 +272,15 @@ async function doShapeShift () {
       let amtUsd = bns.div(amountUsdMap[d], '1', 2)
       // const c = padSpace(txCountMap[d], 3)
 
-      const l = sprintf('%s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC', d, txCountMap[d], parseFloat(avgUsd), parseFloat(avgBtc), parseFloat(amtUsd), parseFloat(amtBtc))
+      let currencyAmounts = ''
+
+      for (const c in currencyAmountMap[d]) {
+        let a = currencyAmountMap[d][c]
+        a = bns.div(a, '1', 2)
+        currencyAmounts += `${c}:${a} `
+      }
+
+      const l = sprintf('%s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC, %s', d, txCountMap[d], parseFloat(avgUsd), parseFloat(avgBtc), parseFloat(amtUsd), parseFloat(amtBtc), currencyAmounts)
       console.log(l)
       // console.log(`${d} txs:${c} - avgUSD:${avgUsd} - avgBTC:${avgBtc} - amtUSD:${amtUsd} - amtBTC:${amtBtc}`)
     }
