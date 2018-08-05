@@ -75,12 +75,15 @@ async function queryCoinApi (currencyCode: string, date: string) {
           'X-CoinAPI-Key': config.coinApiKey
         }
       })
+    const jsonObj = await response.json()
+    if (!jsonObj.rate) {
+      throw new Error('No rate from CoinAPI')
+    }
+    return jsonObj.rate.toString()
   } catch (e) {
     console.log(e)
     throw e
   }
-  const jsonObj = await response.json()
-  return jsonObj.rate.toString()
 }
 
 
