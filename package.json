@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node lib/reporter.js",
-    "start:cache": "node lib/reporter.js ssRaw.json",
+    "cache": "node lib/reporter.js ssRaw.json",
     "build": "flow-remove-types src/ -d lib/",
     "build:clean": "rimraf lib",
     "test": "npm run lint",
