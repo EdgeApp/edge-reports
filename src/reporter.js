@@ -7,7 +7,21 @@ const { sprintf } = require('sprintf-js')
 
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
-const interval = config.timeInterval
+let interval = config.timeInterval
+let useCache = false
+const cacheFile = './ssRaw.json'
+
+for (const arg of process.argv) {
+  if (
+    arg === 'day' ||
+    arg === 'month' ||
+    arg === 'hour' ||
+    arg === 'mins') {
+    interval = arg
+  } else if (arg === 'cache') {
+    useCache = true
+  }
+}
 
 type ShapeShiftTx = {
   inputTXID: string,
@@ -158,11 +172,11 @@ function daydiff(first, second) {
 
 async function doShapeShift () {
   let jsonObj = []
-  if (process.argv && process.argv[2]) {
-    jsonObj = js.readFileSync(process.argv[2])
+  if (useCache) {
+    jsonObj = js.readFileSync(cacheFile)
   } else {
     const apiKey = config.shapeShiftApiKey
-    const request = `https://shapeshift.io/txbyapikey/${apiKey}`
+    const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/9999999`
     console.log(request)
     let response
     while (jsonObj.length === 0) {
@@ -176,6 +190,10 @@ async function doShapeShift () {
       js.writeFileSync('./ssRaw.json', jsonObj)
     }
   }
+
+  jsonObj.sort((a, b) => {
+    return b.timestamp - a.timestamp
+  })
 
   console.log('Number of transactions:' + jsonObj.length.toString())
 
@@ -194,11 +212,11 @@ async function doShapeShift () {
       continue
     }
     const date: Date = new Date(tx.timestamp * 1000)
-    const year = date.getFullYear()
-    const month = pad(date.getMonth() + 1, 2)
-    const day = pad(date.getDate(), 2)
-    const hour = pad(date.getHours(), 2)
-    const mins = pad(date.getMinutes(), 2)
+    const year = date.getUTCFullYear()
+    const month = pad(date.getUTCMonth() + 1, 2)
+    const day = pad(date.getUTCDate(), 2)
+    const hour = pad(date.getUTCHours(), 2)
+    const mins = pad(date.getUTCMinutes(), 2)
 
     let idx
     if (interval === 'day') {
