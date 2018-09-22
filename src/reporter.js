@@ -92,6 +92,13 @@ type GetRateOptions = {
   day: string
 }
 
+function clearCache () {
+  ratePairs = {}
+  ratesLoaded = false
+  btcRates = {}
+  btcRatesLoaded = false  
+}
+
 async function queryCoinApi (currencyCode: string, date: string) {
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
   const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z`
@@ -192,6 +199,7 @@ function daydiff(first, second) {
 }
 
 async function doShapeShift () {
+  clearCache()
   const cachedTransactions = js.readFileSync(cacheFile)
   let newTransactions = []
   if (!useCache) {
