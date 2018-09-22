@@ -4,12 +4,20 @@ const fetch = require('node-fetch')
 const js = require('jsonfile')
 const { bns } = require('biggystring')
 const { sprintf } = require('sprintf-js')
+const jsonFormat = require('json-format')
+const fs = require('fs')
 
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 let interval = config.timeInterval
 let useCache = false
+let doSummary = false
 const cacheFile = './ssRaw.json'
+
+const jsonConfig = {
+  type: 'space',
+  size: 2
+}
 
 for (const arg of process.argv) {
   if (
@@ -20,6 +28,15 @@ for (const arg of process.argv) {
     interval = arg
   } else if (arg === 'cache') {
     useCache = true
+  } else if (arg === 'summary') {
+    doSummary = true
+    break
+  } else if (arg === 'nocache') {
+    useCache = false
+  }
+
+  if (process.argv.length === 5) {
+    config.endDate = process.argv[4]
   }
 }
 
@@ -79,7 +96,9 @@ async function queryCoinApi (currencyCode: string, date: string) {
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
   const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z`
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-  console.log(url)
+  if (!doSummary) {
+    console.log(url)
+  }
   let response
   try {
     response = await fetch(url,
@@ -95,7 +114,9 @@ async function queryCoinApi (currencyCode: string, date: string) {
     }
     return jsonObj.rate.toString()
   } catch (e) {
-    console.log(e)
+    if (!doSummary) {
+      console.log(e)
+    }
     throw e
   }
 }
@@ -171,31 +192,52 @@ function daydiff(first, second) {
 }
 
 async function doShapeShift () {
-  let jsonObj = []
-  if (useCache) {
-    jsonObj = js.readFileSync(cacheFile)
-  } else {
+  const cachedTransactions = js.readFileSync(cacheFile)
+  let newTransactions = []
+  if (!useCache) {
     const apiKey = config.shapeShiftApiKey
-    const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/9999999`
-    console.log(request)
-    let response
-    while (jsonObj.length === 0) {
+    const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/500`
+    if (!doSummary) {
+      console.log(request)
+    }
+    while (newTransactions.length === 0) {
+      let response
       try {
         response = await fetch(request)
+        newTransactions = await response.json()
       } catch (e) {
         console.log(e)
         return
       }
-      jsonObj = await response.json()
-      js.writeFileSync('./ssRaw.json', jsonObj)
     }
   }
 
-  jsonObj.sort((a, b) => {
+  // Find duplicates
+  let numAdded = 0
+  for (const newTx of newTransactions) {
+    let match = false
+    for (const oldTx of cachedTransactions) {
+      if (oldTx.inputTXID === newTx.inputTXID) {
+        match = true
+        break
+      }
+    }
+    if (!match) {
+      cachedTransactions.push(newTx)
+      numAdded++  
+    }
+  }
+  cachedTransactions.sort((a, b) => {
     return b.timestamp - a.timestamp
   })
 
-  console.log('Number of transactions:' + jsonObj.length.toString())
+  if (!doSummary) {
+    console.log('Number of downloaded transactions: ' + newTransactions.length.toString())
+    console.log('Number of new transactions: ' + numAdded.toString())  
+  }
+
+  const out = jsonFormat(cachedTransactions, jsonConfig)
+  fs.writeFileSync('./ssRaw.json', out)
 
   let txCountMap: {[date: string]: number} = {}
   let avgBtcMap: {[date: string]: string} = {}
@@ -207,7 +249,7 @@ async function doShapeShift () {
   let amountTotal = '0'
   let revTotal = '0'
   let grandTotalAmount = '0'
-  for (const tx: ShapeShiftTx of jsonObj) {
+  for (const tx: ShapeShiftTx of cachedTransactions) {
     if (tx.status !== 'complete') {
       continue
     }
@@ -292,10 +334,21 @@ async function doShapeShift () {
 
       let currencyAmounts = ''
 
+      let currencyAmountArray = []
       for (const c in currencyAmountMap[d]) {
-        let a = currencyAmountMap[d][c]
+        currencyAmountArray.push({code: c, amount: currencyAmountMap[d][c]})
+      }
+      currencyAmountArray.sort((a, b) => {
+        return bns.lt(a.amount, b.amount) ? 1 : -1
+      })
+
+      let i = 0
+      for (const c of currencyAmountArray) {
+        let a = c.amount
         a = bns.div(a, '1', 2)
-        currencyAmounts += `${c}:${a} `
+        currencyAmounts += `${c.code}:${a} `
+        i++
+        if (i > 5) break
       }
 
       const l = sprintf('%s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC, %s', d, txCountMap[d], parseFloat(avgUsd), parseFloat(avgBtc), parseFloat(amtUsd), parseFloat(amtBtc), currencyAmounts)
@@ -307,7 +360,7 @@ async function doShapeShift () {
   // console.log(txCountMap)
   // console.log(amountBtcMap)
   // console.log(avgBtcMap)
-  console.log('avg tx size: ' + (parseInt(grandTotalAmount) / jsonObj.length).toString())
+  console.log('avg tx size: ' + (parseInt(grandTotalAmount) / cachedTransactions.length).toString())
 }
 
 async function doLibertyX () {
@@ -355,4 +408,45 @@ async function main () {
   console.log(new Date(Date.now()))
 }
 
-main()
+function makeDate (endTime) {
+  const end = new Date(endTime)
+  const y = (end.getUTCFullYear()).toString()
+  let m = (end.getUTCMonth() + 1).toString()
+  if (m.length < 2) m = `0${m}`
+  let d = (end.getUTCDate()).toString()
+  if (d.length < 2) d = `0${d}`
+  return `${y}-${m}-${d}`
+}
+
+async function doSummaryFunction () {
+  console.log(new Date(Date.now()))
+  console.log('**************************************************')
+  console.log('******* Monthly')
+  useCache = false
+  interval = 'month'
+  config.endDate = '2018-01'
+  console.log(`******* Monthly until ${config.endDate}`)
+  await doShapeShift()
+
+  console.log('**************************************************')
+  useCache = true
+  interval = 'day'
+  let end = Date.now() - (1000 * 60 * 60 * 24 * 30) // 30 days back
+  config.endDate = makeDate(end)
+  console.log(`******* Daily until ${config.endDate}`)
+  await doShapeShift()
+
+  console.log('**************************************************')
+  useCache = true
+  interval = 'hour'
+  end = Date.now() - (1000 * 60 * 60 * 24 * 2) // 2 days back
+  config.endDate = makeDate(end)
+  console.log(`******* Hourly until ${config.endDate}`)
+  await doShapeShift()
+}
+
+if (!doSummary) {
+  main()
+} else {
+  doSummaryFunction()
+}

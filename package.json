@@ -19,6 +19,7 @@
   "dependencies": {
     "await-sleep": "0.0.1",
     "biggystring": "^3.0.1",
+    "json-format": "^1.0.1",
     "jsonfile": "^4.0.0",
     "node-fetch": "^1.7.3",
     "sprintf-js": "^1.1.1"
