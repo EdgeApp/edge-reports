@@ -7,6 +7,7 @@ const { sprintf } = require('sprintf-js')
 const jsonFormat = require('json-format')
 const fs = require('fs')
 
+const SS_QUERY_HISTORY = 50
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 let interval = config.timeInterval
@@ -17,27 +18,6 @@ const cacheFile = './ssRaw.json'
 const jsonConfig = {
   type: 'space',
   size: 2
-}
-
-for (const arg of process.argv) {
-  if (
-    arg === 'day' ||
-    arg === 'month' ||
-    arg === 'hour' ||
-    arg === 'mins') {
-    interval = arg
-  } else if (arg === 'cache') {
-    useCache = true
-  } else if (arg === 'summary') {
-    doSummary = true
-    break
-  } else if (arg === 'nocache') {
-    useCache = false
-  }
-
-  if (process.argv.length === 5) {
-    config.endDate = process.argv[4]
-  }
 }
 
 type ShapeShiftTx = {
@@ -204,7 +184,7 @@ async function doShapeShift () {
   let newTransactions = []
   if (!useCache) {
     const apiKey = config.shapeShiftApiKey
-    const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/500`
+    const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/${SS_QUERY_HISTORY}`
     if (!doSummary) {
       console.log(request)
     }
@@ -453,8 +433,33 @@ async function doSummaryFunction () {
   await doShapeShift()
 }
 
-if (!doSummary) {
-  main()
-} else {
-  doSummaryFunction()
+async function report (argv: Object) {
+  for (const arg of argv) {
+    if (
+      arg === 'day' ||
+      arg === 'month' ||
+      arg === 'hour' ||
+      arg === 'mins') {
+      interval = arg
+    } else if (arg === 'cache') {
+      useCache = true
+    } else if (arg === 'summary') {
+      doSummary = true
+      break
+    } else if (arg === 'nocache') {
+      useCache = false
+    }
+  
+    if (process.argv.length === 5) {
+      config.endDate = process.argv[4]
+    }
+  }
+
+  if (!doSummary) {
+    await main()
+  } else {
+    await doSummaryFunction()
+  }  
 }
+
+module.exports = { report }
