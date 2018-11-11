@@ -6,6 +6,7 @@ const config = require('../config.json')
 const clog = console.log
 let consoleString
 console.log = (str) => {
+    clog(str)
     consoleString = consoleString + str + '\n'
 }
 

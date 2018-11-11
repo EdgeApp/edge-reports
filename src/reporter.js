@@ -7,13 +7,22 @@ const { sprintf } = require('sprintf-js')
 const jsonFormat = require('json-format')
 const fs = require('fs')
 
-const SS_QUERY_HISTORY = 50
+const SS_QUERY_HISTORY = 300
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 let interval = config.timeInterval
 let useCache = false
 let doSummary = false
-const cacheFile = './ssRaw.json'
+const SHAPESHIFT_CACHE = './ssRaw.json'
+const CHANGELLY_CACHE = './chRaw.json'
+let _coincapQuery
+
+const Changelly = require('api-changelly/lib.js')
+
+const changelly = new Changelly(
+    '4ac2abc529b84dd9bbfcb5653c644c80',
+    '26d6f2cf7f3086a850fd3006bf37aceb184ee4f50c3f146373ebba65ecca711b'
+)
 
 const jsonConfig = {
   type: 'space',
@@ -29,10 +38,7 @@ type ShapeShiftTx = {
   outputCurrency: string,
   status: string, // complete,
   timestamp: number,
-  hasConfirmations: boolean,
-  outputTXID: string,
-  outputAmount: string,
-  shiftRate: string
+  outputAmount: string
 }
 
 function pad (num, size) {
@@ -108,7 +114,6 @@ async function queryCoinApi (currencyCode: string, date: string) {
   }
 }
 
-
 async function getPairCached (currencyCode: string, date: string) {
   if (!ratesLoaded) {
     try {
@@ -133,7 +138,7 @@ async function getPairCached (currencyCode: string, date: string) {
   return rate
 }
 
-async function getRate (opts: GetRateOptions): string {
+async function getRate (opts: GetRateOptions): Promise<string> {
   const { from, to, year, month, day } = opts
   const date = `${year}-${month}-${day}`
   const pair = `${from}_${to}`
@@ -161,10 +166,24 @@ async function getRate (opts: GetRateOptions): string {
       if (btcRates[pair]) {
         return btcRates[pair]
       }
-      const request = `https://shapeshift.io/rate/${pair}`
-      const response = await fetch(request)
-      const jsonObj = await response.json()
-      const rate = jsonObj.rate.toString()
+
+      if (!_coincapQuery) {
+        const request = `https://coincap.io/front`
+        const response = await fetch(request)
+        _coincapQuery = await response.json()
+      }
+      for (const c of _coincapQuery) {
+        if (c.short.toUpperCase() === from.toUpperCase()) {
+          fromToUsd = c.price.toString()
+        }
+        if (c.short.toUpperCase() === to.toUpperCase()) {
+          toToUsd = c.price.toString()
+        }
+        if (fromToUsd && toToUsd) {
+          break
+        }
+      }
+      const rate = bns.div(fromToUsd, toToUsd, 8)
       btcRates[pair] = rate
       js.writeFileSync('./btcRates.json', btcRates)
       return rate
@@ -178,43 +197,144 @@ function daydiff(first, second) {
   return Math.round((second-first)/(1000*60*60*24))
 }
 
-async function doShapeShift () {
-  clearCache()
-  const cachedTransactions = js.readFileSync(cacheFile)
+const getTransactionsPromised = (limit, offset, currencyFrom, address, extraId) => {
+  return new Promise((resolve, reject) => {
+      changelly.getTransactions(limit, offset, currencyFrom, address, extraId, (err, data) => {
+          if (err) {
+              reject(err)
+          } else {
+              resolve(data)
+          }
+      })    
+  })
+}
+
+async function fetchChangelly () {
+  let diskCache = { txs: [] }
+  try {
+    diskCache = js.readFileSync(CHANGELLY_CACHE)
+  } catch (e) {}
+  const cachedTransactions = diskCache.txs
+  console.log(`Read txs from cache: ${cachedTransactions.length}`)
   let newTransactions = []
-  if (!useCache) {
-    const apiKey = config.shapeShiftApiKey
-    const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/${SS_QUERY_HISTORY}`
-    if (!doSummary) {
-      console.log(request)
-    }
-    while (newTransactions.length === 0) {
-      let response
-      try {
-        response = await fetch(request)
-        newTransactions = await response.json()
-      } catch (e) {
-        console.log(e)
-        return
+  let offset = diskCache.offset ? diskCache.offset : 0
+  const ssFormatTxs: Array<ShapeShiftTx> = []
+
+  while (1 && !useCache) {
+    const result = await getTransactionsPromised(300, offset, undefined, undefined, undefined)
+    console.log(`Changelly: offset:${offset} count:${result.result.length}`)
+    
+    for (const tx of result.result) {
+      if (tx.status === 'finished') {
+        const ssTx: ShapeShiftTx = {
+          status: 'complete',
+          inputTXID: tx.payinHash,
+          inputAddress: tx.payinAddress,
+          inputCurrency: tx.currencyFrom.toUpperCase(),
+          inputAmount: tx.amountExpectedFrom,
+          outputAddress: tx.payoutAddress,
+          outputCurrency: tx.currencyTo.toUpperCase(),
+          outputAmount: tx.amountExpectedTo,
+          timestamp: tx.createdAt
+        }
+        ssFormatTxs.push(ssTx)
       }
     }
+    if (result.result.length < 300) {
+      break
+    }
+
+    console.log(`Changelly completed: ${ssFormatTxs.length}`)
+    // if (offset > 350) break
+    offset += 300
   }
+  diskCache.offset = offset
+  const out = {
+    diskCache,
+    newTransactions: ssFormatTxs
+  }
+  return out
+}
+
+async function fetchShapeShift () {
+  let diskCache = { txs: [] }
+  try {
+    diskCache = js.readFileSync(SHAPESHIFT_CACHE)
+  } catch (e) {}
+  const cachedTransactions = diskCache.txs
+  console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  let newTransactions = []
+
+  if (!useCache) {
+    console.log(`Querying shapeshift...`)
+    const apiKey = config.shapeShiftApiKey
+    try {
+      const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/${SS_QUERY_HISTORY}`
+      if (!doSummary) {
+        console.log(request)
+      }
+      const response = await fetch(request)
+      newTransactions = await response.json()
+    } catch (e) {
+      newTransactions = []      
+    }
+  }
+  const out = {
+    diskCache,
+    newTransactions
+  }
+  return out
+}
+
+async function doShapeShift () {
+  return doSwapService(fetchShapeShift, SHAPESHIFT_CACHE, "SS")
+}
+async function doChangelly () {
+  return doSwapService(fetchChangelly, CHANGELLY_CACHE, 'CH')
+}
+
+async function doSwapService (theFetch: Function, cacheFile: string, prefix: string) {
+  clearCache()
+  // const diskCache = js.readFileSync(cacheFile)
+  // const cachedTransactions = diskCache.txs
+  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  // let newTransactions = []
+  // if (!useCache) {
+  //   while (newTransactions.length === 0) {
+  //     try {
+  //       const newQuery = await theFetch()
+  //       newTransactions = newQuery.txs
+  //       console.log(`Got new transactions... ${newTransactions.length}`)
+  //     } catch (e) {
+  //       console.log(e)
+  //       return
+  //     }
+  //   }
+  // }
+
+  const { diskCache, newTransactions } = await theFetch()
+  let cachedTransactions = diskCache.txs
 
   // Find duplicates
   let numAdded = 0
+  const newTxsNoDupes = []
   for (const newTx of newTransactions) {
     let match = false
     for (const oldTx of cachedTransactions) {
-      if (oldTx.inputTXID === newTx.inputTXID) {
+      if (
+        oldTx.inputTXID === newTx.inputTXID &&
+        oldTx.status === newTx.status
+      ) {
         match = true
         break
       }
     }
     if (!match) {
-      cachedTransactions.push(newTx)
+      newTxsNoDupes.push(newTx)
       numAdded++  
     }
   }
+  cachedTransactions = cachedTransactions.concat(newTxsNoDupes)
   cachedTransactions.sort((a, b) => {
     return b.timestamp - a.timestamp
   })
@@ -224,8 +344,9 @@ async function doShapeShift () {
     console.log('Number of new transactions: ' + numAdded.toString())  
   }
 
-  const out = jsonFormat(cachedTransactions, jsonConfig)
-  fs.writeFileSync('./ssRaw.json', out)
+  diskCache.txs = cachedTransactions
+  const out = jsonFormat(diskCache, jsonConfig)
+  fs.writeFileSync(cacheFile, out)
 
   let txCountMap: {[date: string]: number} = {}
   let avgBtcMap: {[date: string]: string} = {}
@@ -339,7 +460,7 @@ async function doShapeShift () {
         if (i > 5) break
       }
 
-      const l = sprintf('%s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC, %s', d, txCountMap[d], parseFloat(avgUsd), parseFloat(avgBtc), parseFloat(amtUsd), parseFloat(amtBtc), currencyAmounts)
+      const l = sprintf('%s %s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC, %s', prefix, d, txCountMap[d], parseFloat(avgUsd), parseFloat(avgBtc), parseFloat(amtUsd), parseFloat(amtBtc), currencyAmounts)
       console.log(l)
       // console.log(`${d} txs:${c} - avgUSD:${avgUsd} - avgBTC:${avgBtc} - amtUSD:${amtUsd} - amtBTC:${amtBtc}`)
     }
@@ -406,15 +527,15 @@ function makeDate (endTime) {
   return `${y}-${m}-${d}`
 }
 
-async function doSummaryFunction () {
+async function doSummaryFunction (doFunction) {
   console.log(new Date(Date.now()))
   console.log('**************************************************')
   console.log('******* Monthly')
-  useCache = false
+  useCache = true
   interval = 'month'
   config.endDate = '2018-01'
   console.log(`******* Monthly until ${config.endDate}`)
-  await doShapeShift()
+  await doFunction()
 
   console.log('**************************************************')
   useCache = true
@@ -422,7 +543,7 @@ async function doSummaryFunction () {
   let end = Date.now() - (1000 * 60 * 60 * 24 * 30) // 30 days back
   config.endDate = makeDate(end)
   console.log(`******* Daily until ${config.endDate}`)
-  await doShapeShift()
+  await doFunction()
 
   console.log('**************************************************')
   useCache = true
@@ -430,7 +551,7 @@ async function doSummaryFunction () {
   end = Date.now() - (1000 * 60 * 60 * 24 * 2) // 2 days back
   config.endDate = makeDate(end)
   console.log(`******* Hourly until ${config.endDate}`)
-  await doShapeShift()
+  await doFunction()
 }
 
 async function report (argv: Object) {
@@ -458,7 +579,8 @@ async function report (argv: Object) {
   if (!doSummary) {
     await main()
   } else {
-    await doSummaryFunction()
+    await doSummaryFunction(doChangelly)
+    await doSummaryFunction(doShapeShift)
   }  
 }
 

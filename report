@@ -1,1 +1,1 @@
-node lib/reporter.js $@
+node lib/report.js $@
