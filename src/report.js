@@ -1,3 +1,8 @@
-const { report } = require ('./reporter.js')
+const { report } = require('./reporter.js')
 
-report(process.argv)
+async function main () {
+  await report(process.argv)
+  process.exit()
+}
+
+main()

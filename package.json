@@ -9,10 +9,11 @@
     "build": "flow-remove-types src/ -d lib/",
     "build:clean": "rimraf lib",
     "test": "npm run lint",
-    "flow": "flow",
-    "precommit": "npm test",
-    "lint": "standard '*.js' 'src/**/*.js' 'test/**/*.js' && npm run flow",
-    "lint:fix": "standard '*.js' 'src/**/*.js' 'test/**/*.js' --fix"
+    "flow": "flow status",
+    "format": "prettier-eslint --write '*.js' 'src/**/*.js' 'test/**/*.js'",
+    "lint": "eslint '*.js' 'src/**/*.js' 'test/**/*.js' && npm run flow",
+    "lint:fix": "eslint --fix '*.js' 'src/**/*.js' 'test/**/*.js' && npm run flow",
+    "precommit": "npm run build && npm test"
   },
   "author": "Paul Puey <paul@edgesecure.co>",
   "license": "ISC",
@@ -26,10 +27,18 @@
     "sprintf-js": "^1.1.1"
   },
   "devDependencies": {
-    "eslint-plugin-flowtype": "^2.34.1",
+    "babel-eslint": "^7.2.3",
+    "babel-plugin-transform-flow-strip-types": "^6.22.0",
+    "babel-preset-flow": "^6.23.0",
+    "eslint": "4.5.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-flowtype": "^2.35.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.4.0",
+    "eslint-plugin-standard": "^3.0.1",
     "flow-bin": "^0.62.0",
     "flow-remove-types": "^1.2.3",
-    "husky": "^0.12.0",
-    "standard": "^10.0.2"
+    "husky": "^0.12.0"
   }
 }
