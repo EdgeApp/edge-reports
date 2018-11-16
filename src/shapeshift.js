@@ -3,7 +3,7 @@
 import type { SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
 const fetch = require('node-fetch')
-const SS_QUERY_HISTORY = 300
+const SS_QUERY_PAGES = 3
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const { checkSwapService } = require('./checkSwapService.js')
@@ -26,19 +26,30 @@ async function fetchShapeShift (swapFuncParams: SwapFuncParams) {
   const cachedTransactions = diskCache.txs
   console.log(`Read txs from cache: ${cachedTransactions.length}`)
   let newTransactions = []
+  let page = 0
 
-  if (!swapFuncParams.useCache) {
+  while (1 && !swapFuncParams.useCache) {
     console.log(`Querying shapeshift...`)
-    const apiKey = config.shapeShiftApiKey
     try {
-      const request = `https://shapeshift.io/txbyapikeylimit/${apiKey}/${SS_QUERY_HISTORY}`
+      const request = `https://shapeshift.io/client/transactions?limit=500&sort=DESC&page=${page}`
+      const options = {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${config.shapeShiftToken}`
+        }
+      }
       //   if (!doSummary) {
       //     console.log(request)
       //   }
-      const response = await fetch(request)
-      newTransactions = await response.json()
+      const response = await fetch(request, options)
+      const txs = await response.json()
+      newTransactions = newTransactions.concat(txs)
     } catch (e) {
-      newTransactions = []
+      break
+    }
+    page++
+    if (page > SS_QUERY_PAGES) {
+      break
     }
   }
   const out = {

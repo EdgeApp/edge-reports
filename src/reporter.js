@@ -108,7 +108,7 @@ async function report (argv: Array<any>) {
     await main(swapFuncParams)
   } else {
     await doSummaryFunction(doChangelly)
-    // await doSummaryFunction(doShapeShift)
+    await doSummaryFunction(doShapeShift)
   }
 }
 
