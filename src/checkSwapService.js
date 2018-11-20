@@ -195,6 +195,7 @@ async function checkSwapService (
   //   }
   // }
 
+  const { endDate } = swapFuncParams
   const { diskCache, newTransactions } = await theFetch(swapFuncParams)
   let cachedTransactions = diskCache.txs
 
@@ -270,7 +271,7 @@ async function checkSwapService (
       idx = `${year}-${month}`
     }
 
-    if (idx.startsWith(config.endDate)) {
+    if (idx.startsWith(endDate)) {
       break
     }
 
