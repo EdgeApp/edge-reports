@@ -1,56 +1,15 @@
 // @flow
 import type { SwapFuncParams } from './checkSwapService.js'
-const fetch = require('node-fetch')
-const js = require('jsonfile')
 const { doShapeShift } = require('./shapeshift.js')
 const { doChangelly } = require('./changelly.js')
-const confFileName = './config.json'
-const config = js.readFileSync(confFileName)
-
-async function doLibertyX () {
-  const apiKey = config.libertyXApiKey
-  const request = `https://libertyx.com/airbitz/stats`
-  console.log(request)
-  let response
-  try {
-    response = await fetch(request, {
-      headers: {
-        Authorization: `${apiKey}`
-      },
-      method: 'POST'
-    })
-  } catch (e) {
-    console.log(e)
-    return
-  }
-  const jsonObj = await response.json()
-  let numTx = 0
-  let newAmt = 0
-  let oldAmt = 0
-  for (const day of jsonObj.stats) {
-    let a = 0
-    let n = 0
-    if (day.all_transactions_count) {
-      numTx += day.all_transactions_count
-    }
-    if (day.all_transactions_usd_sum) {
-      a = day.all_transactions_usd_sum
-    }
-    if (day.first_transactions_usd_sum) {
-      n = day.first_transactions_usd_sum
-    }
-    oldAmt += a - n
-    newAmt += n
-  }
-  console.log('Number of transactions:' + numTx.toString())
-  console.log('Total new revenue:' + newAmt.toString())
-  console.log('Total old revenue:' + oldAmt.toString())
-}
+const { doLibertyX } = require('./libertyx.js')
+const { doChangenow } = require('./changenow.js')
 
 async function main (swapFuncParams: SwapFuncParams) {
+  await doChangenow(swapFuncParams)
   await doShapeShift(swapFuncParams)
   await doChangelly(swapFuncParams)
-  await doLibertyX()
+  await doLibertyX(swapFuncParams)
   console.log(new Date(Date.now()))
 }
 
@@ -107,8 +66,10 @@ async function report (argv: Array<any>) {
   if (!doSummary) {
     await main(swapFuncParams)
   } else {
+    await doSummaryFunction(doChangenow)
     await doSummaryFunction(doChangelly)
     await doSummaryFunction(doShapeShift)
+    await doSummaryFunction(doLibertyX)
   }
 }
 

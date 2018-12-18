@@ -41,6 +41,14 @@ function pad (num, size) {
   return s
 }
 
+function padRight (num, size) {
+  let s = num + ''
+  while (s.length < size) {
+    s = s + '0'
+  }
+  return s
+}
+
 let ratePairs: { [date: string]: { [code: string]: string } } = {}
 let ratesLoaded = false
 let btcRates = {}
@@ -271,7 +279,12 @@ async function checkSwapService (
       idx = `${year}-${month}`
     }
 
-    if (idx.startsWith(endDate)) {
+    let idxCompare = idx.replace(/-/g, '')
+    idxCompare = padRight(idxCompare, 12)
+    let dateCompare = endDate.replace(/-/g, '')
+    dateCompare = padRight(dateCompare, 12)
+
+    if (bns.gt(dateCompare, idxCompare)) {
       break
     }
 
@@ -287,23 +300,33 @@ async function checkSwapService (
     txCountMap[idx]++
 
     let amountBtc: string = '0'
-    if (tx.inputCurrency === 'BTC') {
-      amountBtc = tx.inputAmount.toString()
+    let amountUsd: string = '0'
+    if (
+      tx.inputCurrency === 'USD' &&
+      tx.outputCurrency === 'USD'
+    ) {
+      amountBtc = '0'
+      amountUsd = tx.outputAmount
     } else {
-      const rate = await getRate({
-        from: tx.inputCurrency,
-        to: 'BTC',
-        year: year.toString(),
-        month,
-        day
-      })
-      amountBtc = bns.mul(rate, tx.inputAmount.toString())
+      if (tx.inputCurrency === 'BTC') {
+        amountBtc = tx.inputAmount.toString()
+      } else {
+        const rate = await getRate({
+          from: tx.inputCurrency,
+          to: 'BTC',
+          year: year.toString(),
+          month,
+          day
+        })
+        amountBtc = bns.mul(rate, tx.inputAmount.toString())
+      }
+      const btcRate = await getPairCached(
+        'BTC',
+        `${year.toString()}-${month}-${day}`
+      )
+      amountUsd = bns.mul(amountBtc, btcRate)
     }
-    const btcRate = await getPairCached(
-      'BTC',
-      `${year.toString()}-${month}-${day}`
-    )
-    const amountUsd = bns.mul(amountBtc, btcRate)
+
     amountBtcMap[idx] = bns.add(amountBtcMap[idx], amountBtc)
     amountUsdMap[idx] = bns.add(amountUsdMap[idx], amountUsd)
     const rev = bns.mul(amountBtc, '0.0025')
