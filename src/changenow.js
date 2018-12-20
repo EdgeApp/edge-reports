@@ -11,7 +11,7 @@ const CHANGENOW_CACHE = './cnRaw.json'
 async function doChangenow (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchChangenow,
     CHANGENOW_CACHE,
-    'CH',
+    'CN',
     swapFuncParams
   )
 }
@@ -59,7 +59,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
     }
 
     console.log(`Changenow completed: ${ssFormatTxs.length}`)
-    if (offset > 600) {
+    if (offset > 300) {
       console.log('length < 100, stopping query')
       break
     }

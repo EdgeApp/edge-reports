@@ -2,11 +2,21 @@
 const fs = require('fs')
 const js = require('jsonfile')
 const fetch = require('node-fetch')
-const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
+
+export type TxData = {
+  txCount: number,
+  // avgBtc: string,
+  // avgUsd: string,
+  currencyAmount: { [currencyCode: string]: string },
+  amountBtc: string,
+  amountUsd: string,
+}
+
+export type TxDataMap = { [currencyCode: string]: TxData }
 
 export type ShapeShiftTx = {
   inputTXID: string,
@@ -242,15 +252,7 @@ async function checkSwapService (
   const out = jsonFormat(diskCache, jsonConfig)
   fs.writeFileSync(cacheFile, out)
 
-  const txCountMap: { [date: string]: number } = {}
-  const avgBtcMap: { [date: string]: string } = {}
-  const avgUsdMap: { [date: string]: string } = {}
-  const currencyAmountMap: {
-    [date: string]: { [currencyCode: string]: string }
-  } = {}
-  const amountBtcMap: { [date: string]: string } = {}
-  const amountUsdMap: { [date: string]: string } = {}
-  const revMap: { [date: string]: string } = {}
+  const txDataMap: { [date: string]: TxData } = {}
   let amountTotal = '0'
   let revTotal = '0'
   let grandTotalAmount = '0'
@@ -288,16 +290,17 @@ async function checkSwapService (
       break
     }
 
-    if (txCountMap[idx] === undefined) {
-      txCountMap[idx] = 0
-      amountBtcMap[idx] = '0'
-      amountUsdMap[idx] = '0'
-      revMap[idx] = '0'
-      avgBtcMap[idx] = '0'
-      avgUsdMap[idx] = '0'
-      currencyAmountMap[idx] = {}
+    if (txDataMap[idx] === undefined) {
+      txDataMap[idx] = {
+        txCount: 0,
+        amountBtc: '0',
+        amountUsd: '0',
+        // avgBtc: '0',
+        // avgUsd: '0',
+        currencyAmount: {}
+      }
     }
-    txCountMap[idx]++
+    txDataMap[idx].txCount++
 
     let amountBtc: string = '0'
     let amountUsd: string = '0'
@@ -327,78 +330,34 @@ async function checkSwapService (
       amountUsd = bns.mul(amountBtc, btcRate)
     }
 
-    amountBtcMap[idx] = bns.add(amountBtcMap[idx], amountBtc)
-    amountUsdMap[idx] = bns.add(amountUsdMap[idx], amountUsd)
+    txDataMap[idx].amountBtc = bns.add(txDataMap[idx].amountBtc, amountBtc)
+    txDataMap[idx].amountUsd = bns.add(txDataMap[idx].amountUsd, amountUsd)
     const rev = bns.mul(amountBtc, '0.0025')
-    revMap[idx] = bns.add(revMap[idx], rev)
-    avgBtcMap[idx] = bns.div(amountBtcMap[idx], txCountMap[idx].toString(), 4)
-    avgUsdMap[idx] = bns.div(amountUsdMap[idx], txCountMap[idx].toString(), 2)
+    // txDataMap[idx].avgBtc = bns.div(txDataMap[idx].amountBtc, txDataMap[idx].txCount.toString(), 4)
+    // txDataMap[idx].avgUsd = bns.div(txDataMap[idx].amountUsd, txDataMap[idx].txCount.toString(), 2)
 
     amountTotal = bns.add(amountTotal, amountBtc)
     grandTotalAmount = bns.add(grandTotalAmount, amountBtc)
     revTotal = bns.add(revTotal, rev)
 
-    if (currencyAmountMap[idx][tx.inputCurrency] === undefined) {
-      currencyAmountMap[idx][tx.inputCurrency] = '0'
+    if (txDataMap[idx].currencyAmount[tx.inputCurrency] === undefined) {
+      txDataMap[idx].currencyAmount[tx.inputCurrency] = '0'
     }
 
-    if (currencyAmountMap[idx][tx.outputCurrency] === undefined) {
-      currencyAmountMap[idx][tx.outputCurrency] = '0'
+    if (txDataMap[idx].currencyAmount[tx.outputCurrency] === undefined) {
+      txDataMap[idx].currencyAmount[tx.outputCurrency] = '0'
     }
 
     const halfAmount = bns.div(amountUsd, '2', 2)
 
-    currencyAmountMap[idx][tx.inputCurrency] = bns.add(
-      currencyAmountMap[idx][tx.inputCurrency],
+    txDataMap[idx].currencyAmount[tx.inputCurrency] = bns.add(
+      txDataMap[idx].currencyAmount[tx.inputCurrency],
       halfAmount
     )
-    currencyAmountMap[idx][tx.outputCurrency] = bns.add(
-      currencyAmountMap[idx][tx.outputCurrency],
+    txDataMap[idx].currencyAmount[tx.outputCurrency] = bns.add(
+      txDataMap[idx].currencyAmount[tx.outputCurrency],
       halfAmount
     )
-  }
-
-  for (const d in txCountMap) {
-    if (txCountMap.hasOwnProperty(d)) {
-      const avgBtc = bns.div(avgBtcMap[d], '1', 6)
-      const avgUsd = bns.div(avgUsdMap[d], '1', 2)
-      const amtBtc = bns.div(amountBtcMap[d], '1', 6)
-      const amtUsd = bns.div(amountUsdMap[d], '1', 2)
-      // const c = padSpace(txCountMap[d], 3)
-
-      let currencyAmounts = ''
-
-      const currencyAmountArray = []
-      for (const c in currencyAmountMap[d]) {
-        currencyAmountArray.push({ code: c, amount: currencyAmountMap[d][c] })
-      }
-      currencyAmountArray.sort((a, b) => {
-        return bns.lt(a.amount, b.amount) ? 1 : -1
-      })
-
-      let i = 0
-      for (const c of currencyAmountArray) {
-        let a = c.amount
-        a = bns.div(a, '1', 2)
-        currencyAmounts += `${c.code}:${a} `
-        i++
-        if (i > 5) break
-      }
-
-      const l = sprintf(
-        '%s %s: %2s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f amtUSD, %2.5f amtBTC, %s',
-        prefix,
-        d,
-        txCountMap[d],
-        parseFloat(avgUsd),
-        parseFloat(avgBtc),
-        parseFloat(amtUsd),
-        parseFloat(amtBtc),
-        currencyAmounts
-      )
-      console.log(l)
-      // console.log(`${d} txs:${c} - avgUSD:${avgUsd} - avgBTC:${avgBtc} - amtUSD:${amtUsd} - amtBTC:${amtBtc}`)
-    }
   }
 
   // console.log(txCountMap)
@@ -408,6 +367,7 @@ async function checkSwapService (
     'avg tx size: ' +
       (parseInt(grandTotalAmount) / cachedTransactions.length).toString()
   )
+  return txDataMap
 }
 
 module.exports = { checkSwapService }

@@ -90,7 +90,7 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
     }
 
     console.log(`Changelly completed: ${ssFormatTxs.length}`)
-    if (offset > 600) {
+    if (offset > 300) {
       console.log('length < 100, stopping query')
       break
     }

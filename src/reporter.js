@@ -1,9 +1,11 @@
 // @flow
-import type { SwapFuncParams } from './checkSwapService.js'
+import type { SwapFuncParams, TxDataMap } from './checkSwapService.js'
 const { doShapeShift } = require('./shapeshift.js')
 const { doChangelly } = require('./changelly.js')
 const { doLibertyX } = require('./libertyx.js')
 const { doChangenow } = require('./changenow.js')
+const { sprintf } = require('sprintf-js')
+const { bns } = require('biggystring')
 
 async function main (swapFuncParams: SwapFuncParams) {
   await doChangenow(swapFuncParams)
@@ -23,24 +25,68 @@ function makeDate (endTime) {
   return `${y}-${m}-${d}`
 }
 
-async function doSummaryFunction (doFunction: Function) {
-  console.log(new Date(Date.now()))
-  console.log('**************************************************')
-  console.log('******* Monthly')
-  console.log(`******* Monthly until 2018-01`)
-  await doFunction({useCache: false, interval: 'month', endDate: '2018-01'})
+function combineResults (r1: { [string]: TxDataMap }, r2: { [string]: TxDataMap }) {
+  for (const freq in r2) {
+    if (r2.hasOwnProperty(freq)) {
+      if (!r1[freq]) {
+        r1[freq] = {}
+      }
+      combineTxDataMap(r1[freq], r2[freq])
+    }
+  }
+}
 
-  console.log('**************************************************')
+function combineTxDataMap (r1: TxDataMap, r2: TxDataMap) {
+  for (const date in r2) {
+    if (r2.hasOwnProperty(date)) {
+      if (!r1[date]) {
+        r1[date] = {
+          txCount: 0,
+          amountBtc: '0',
+          amountUsd: '0',
+          currencyAmount: {}
+        }
+      }
+      // Combine each field
+      r1[date].txCount = r1[date].txCount + r2[date].txCount
+      r1[date].amountBtc = bns.add(r1[date].amountBtc, r2[date].amountBtc)
+      r1[date].amountUsd = bns.add(r1[date].amountUsd, r2[date].amountUsd)
+      for (const cc in r2[date].currencyAmount) {
+        if (r1[date].currencyAmount[cc]) {
+          r1[date].currencyAmount[cc] = bns.add(r1[date].currencyAmount[cc], r2[date].currencyAmount[cc])
+        } else {
+          r1[date].currencyAmount[cc] = r2[date].currencyAmount[cc]
+        }
+      }
+    }
+  }
+}
+
+async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap } {
+  // console.log(new Date(Date.now()))
+  // console.log('**************************************************')
+  // console.log('******* Monthly')
+  // console.log(`******* Monthly until 2018-01`)
+  const out = {
+    monthly: {},
+    daily: {},
+    hourly: {}
+  }
+
+  out.monthly = await doFunction({useCache: false, interval: 'month', endDate: '2018-01'})
+
+  // console.log('**************************************************')
   let end = Date.now() - 1000 * 60 * 60 * 24 * 60 // 60 days back
   let endDate = makeDate(end)
-  console.log(`******* Daily until ${endDate}`)
-  await doFunction({useCache: true, interval: 'day', endDate})
+  // console.log(`******* Daily until ${endDate}`)
+  out.daily = await doFunction({useCache: true, interval: 'day', endDate})
 
-  console.log('**************************************************')
+  // console.log('**************************************************')
   end = Date.now() - 1000 * 60 * 60 * 24 * 2 // 2 days back
   endDate = makeDate(end)
-  console.log(`******* Hourly until ${endDate}`)
-  await doFunction({useCache: true, interval: 'hour', endDate})
+  // console.log(`******* Hourly until ${endDate}`)
+  out.hourly = await doFunction({useCache: true, interval: 'hour', endDate})
+  return out
 }
 
 async function report (argv: Array<any>) {
@@ -66,10 +112,75 @@ async function report (argv: Array<any>) {
   if (!doSummary) {
     await main(swapFuncParams)
   } else {
-    await doSummaryFunction(doChangenow)
-    await doSummaryFunction(doChangelly)
-    await doSummaryFunction(doShapeShift)
-    await doSummaryFunction(doLibertyX)
+    const results: { [string]: TxDataMap } = {}
+    const cnResults = await doSummaryFunction(doChangenow)
+    const chResults = await doSummaryFunction(doChangelly)
+    const ssResults = await doSummaryFunction(doShapeShift)
+    const lxResults = await doSummaryFunction(doLibertyX)
+    combineResults(results, cnResults)
+    combineResults(results, chResults)
+    combineResults(results, ssResults)
+    console.log('\n***** Change NOW Daily *****')
+    printTxDataMap('CHN', cnResults.daily)
+    console.log('\n***** Changelly Daily *****')
+    printTxDataMap('CHA', chResults.daily)
+    console.log('\n***** Shapeshift Daily *****')
+    printTxDataMap('SSH', ssResults.daily)
+    console.log('\n***** Libertyx Daily *****')
+    printTxDataMap('LBX', lxResults.daily)
+    console.log('\n***** Swap Totals *****')
+    printTxDataMap('TTS', results.monthly)
+    printTxDataMap('TTS', results.daily)
+    printTxDataMap('TTS', results.hourly)
+    combineResults(results, lxResults)
+    console.log('\n***** Grand Totals *****')
+    printTxDataMap('TTL', results.monthly)
+    printTxDataMap('TTL', results.daily)
+    printTxDataMap('TTL', results.hourly)
+  }
+}
+
+function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
+  for (const d in txDataMap) {
+    if (txDataMap.hasOwnProperty(d)) {
+      const avgBtc = bns.div(txDataMap[d].amountBtc, txDataMap[d].txCount.toString(), 6)
+      const avgUsd = bns.div(txDataMap[d].amountUsd, txDataMap[d].txCount.toString(), 2)
+      const amtBtc = bns.div(txDataMap[d].amountBtc, '1', 6)
+      const amtUsd = bns.div(txDataMap[d].amountUsd, '1', 2)
+      // const c = padSpace(txCountMap[d], 3)
+
+      let currencyAmounts = ''
+
+      const currencyAmountArray = []
+      for (const c in txDataMap[d].currencyAmount) {
+        currencyAmountArray.push({ code: c, amount: txDataMap[d].currencyAmount[c] })
+      }
+      currencyAmountArray.sort((a, b) => {
+        return bns.lt(a.amount, b.amount) ? 1 : -1
+      })
+
+      let i = 0
+      for (const c of currencyAmountArray) {
+        let a = c.amount
+        a = bns.div(a, '1', 2)
+        currencyAmounts += `${c.code}:${a} `
+        i++
+        if (i > 5) break
+      }
+
+      const l = sprintf(
+        '%s %s: %4s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
+        prefix,
+        d,
+        txDataMap[d].txCount,
+        parseFloat(avgUsd),
+        parseFloat(avgBtc),
+        parseFloat(amtUsd),
+        parseFloat(amtBtc),
+        currencyAmounts
+      )
+      console.log(l)
+    }
   }
 }
 
