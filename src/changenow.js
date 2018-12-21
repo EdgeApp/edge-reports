@@ -59,10 +59,10 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
     }
 
     console.log(`Changenow completed: ${ssFormatTxs.length}`)
-    if (offset > 300) {
-      console.log('length < 100, stopping query')
-      break
-    }
+    // if (offset > 300) {
+    //   console.log('length < 100, stopping query')
+    //   break
+    // }
     offset += 100
     // break
   }

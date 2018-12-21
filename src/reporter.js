@@ -8,10 +8,14 @@ const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
 
 async function main (swapFuncParams: SwapFuncParams) {
-  await doChangenow(swapFuncParams)
-  await doShapeShift(swapFuncParams)
-  await doChangelly(swapFuncParams)
-  await doLibertyX(swapFuncParams)
+  const rChn = await doChangenow(swapFuncParams)
+  const rCha = await doChangelly(swapFuncParams)
+  const rSsh = await doShapeShift(swapFuncParams)
+  const rLbx = await doLibertyX(swapFuncParams)
+  printTxDataMap('CHN', rChn)
+  printTxDataMap('CHA', rCha)
+  printTxDataMap('SSH', rSsh)
+  printTxDataMap('LBX', rLbx)
   console.log(new Date(Date.now()))
 }
 
@@ -128,59 +132,82 @@ async function report (argv: Array<any>) {
     printTxDataMap('SSH', ssResults.daily)
     console.log('\n***** Libertyx Daily *****')
     printTxDataMap('LBX', lxResults.daily)
-    console.log('\n***** Swap Totals *****')
+    console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
+    console.log('\n***** Swap Totals Daily *****')
     printTxDataMap('TTS', results.daily)
+    console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
     combineResults(results, lxResults)
-    console.log('\n***** Grand Totals *****')
+    console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
+    console.log('\n***** Grand Totals Daily *****')
     printTxDataMap('TTL', results.daily)
+    console.log('\n***** Grand Totals Hourly *****')
     printTxDataMap('TTL', results.hourly)
   }
 }
 
 function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
+  // Sort results first
+  const txDataArray = []
   for (const d in txDataMap) {
     if (txDataMap.hasOwnProperty(d)) {
-      const avgBtc = bns.div(txDataMap[d].amountBtc, txDataMap[d].txCount.toString(), 6)
-      const avgUsd = bns.div(txDataMap[d].amountUsd, txDataMap[d].txCount.toString(), 2)
-      const amtBtc = bns.div(txDataMap[d].amountBtc, '1', 6)
-      const amtUsd = bns.div(txDataMap[d].amountUsd, '1', 2)
-      // const c = padSpace(txCountMap[d], 3)
-
-      let currencyAmounts = ''
-
-      const currencyAmountArray = []
-      for (const c in txDataMap[d].currencyAmount) {
-        currencyAmountArray.push({ code: c, amount: txDataMap[d].currencyAmount[c] })
-      }
-      currencyAmountArray.sort((a, b) => {
-        return bns.lt(a.amount, b.amount) ? 1 : -1
+      txDataArray.push({
+        date: d,
+        ...txDataMap[d]
       })
-
-      let i = 0
-      for (const c of currencyAmountArray) {
-        let a = c.amount
-        a = bns.div(a, '1', 2)
-        currencyAmounts += `${c.code}:${a} `
-        i++
-        if (i > 5) break
-      }
-
-      const l = sprintf(
-        '%s %s: %4s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
-        prefix,
-        d,
-        txDataMap[d].txCount,
-        parseFloat(avgUsd),
-        parseFloat(avgBtc),
-        parseFloat(amtUsd),
-        parseFloat(amtBtc),
-        currencyAmounts
-      )
-      console.log(l)
     }
+  }
+  txDataArray.sort((a, b) => {
+    const a1 = parseInt(a.date.replace(/-/g, ''))
+    const b1 = parseInt(b.date.replace(/-/g, ''))
+    const out = b1 - a1
+    // console.log(`${a1} < ${b1} = ${out.toString()}`)
+    return out
+    // return a1 < b1
+    // return a.date < b.date
+    // return parseInt(a.date.replace(/-/g, '')) < parseInt(b.date.replace(/-/g, ''))
+  })
+
+  for (const d of txDataArray) {
+    const avgBtc = bns.div(d.amountBtc, d.txCount.toString(), 6)
+    const avgUsd = bns.div(d.amountUsd, d.txCount.toString(), 2)
+    const amtBtc = bns.div(d.amountBtc, '1', 6)
+    const amtUsd = bns.div(d.amountUsd, '1', 2)
+    // const c = padSpace(txCountMap[d], 3)
+
+    let currencyAmounts = ''
+
+    const currencyAmountArray = []
+    for (const c in d.currencyAmount) {
+      currencyAmountArray.push({ code: c, amount: d.currencyAmount[c] })
+    }
+    currencyAmountArray.sort((a, b) => {
+      return bns.lt(a.amount, b.amount) ? 1 : -1
+    })
+
+    let i = 0
+    for (const c of currencyAmountArray) {
+      let a = c.amount
+      a = bns.div(a, '1', 2)
+      currencyAmounts += `${c.code}:${a} `
+      i++
+      if (i > 5) break
+    }
+
+    const l = sprintf(
+      '%s %s: %4s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
+      prefix,
+      d.date,
+      d.txCount,
+      parseFloat(avgUsd),
+      parseFloat(avgBtc),
+      parseFloat(amtUsd),
+      parseFloat(amtBtc),
+      currencyAmounts
+    )
+    console.log(l)
   }
 }
 
