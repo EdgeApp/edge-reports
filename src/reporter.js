@@ -130,6 +130,8 @@ async function report (argv: Array<any>) {
     printTxDataMap('CHA', chResults.daily)
     console.log('\n***** Shapeshift Daily *****')
     printTxDataMap('SSH', ssResults.daily)
+    console.log('\n***** Libertyx Monthly *****')
+    printTxDataMap('LBX', lxResults.monthly)
     console.log('\n***** Libertyx Daily *****')
     printTxDataMap('LBX', lxResults.daily)
     console.log('\n***** Swap Totals Monthly*****')
@@ -197,7 +199,7 @@ function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
     }
 
     const l = sprintf(
-      '%s %s: %4s txs, %7.2f avgUSD, %1.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
+      '%s %s: %4s txs, %8.2f avgUSD, %2.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
       prefix,
       d.date,
       d.txCount,
