@@ -17,14 +17,13 @@ async function doChangenow (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchChangenow (swapFuncParams: SwapFuncParams) {
-  let diskCache = { txs: [] }
+  let diskCache = { offset: 0, txs: [] }
   try {
     diskCache = js.readFileSync(CHANGENOW_CACHE)
   } catch (e) {}
   const cachedTransactions = diskCache.txs
-  console.log(`Read txs from cache: ${cachedTransactions.length}`)
-  // let offset = diskCache.offset ? diskCache.offset : 0
-  let offset = 0
+  let offset = diskCache.offset ? diskCache.offset : 0
+  console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
   const ssFormatTxs: Array<ShapeShiftTx> = []
 
   while (1 && !swapFuncParams.useCache) {
@@ -59,14 +58,9 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
     }
 
     console.log(`Changenow completed: ${ssFormatTxs.length}`)
-    // if (offset > 300) {
-    //   console.log('length < 100, stopping query')
-    //   break
-    // }
     offset += 100
-    // break
   }
-  // diskCache.offset = offset > 600 ? offset - 600 : offset
+  diskCache.offset = offset
   const out = {
     diskCache,
     newTransactions: ssFormatTxs
