@@ -94,6 +94,10 @@ async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap }
 }
 
 async function report (argv: Array<any>) {
+  const d = new Date()
+  console.log(d)
+  console.log(d.toDateString() + ' ' + d.toTimeString())
+
   const swapFuncParams: SwapFuncParams = {useCache: false, interval: 'month', endDate: '2018-01'}
   let doSummary = false
   for (const arg of argv) {
@@ -147,6 +151,9 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTL', results.daily)
     console.log('\n***** Grand Totals Hourly *****')
     printTxDataMap('TTL', results.hourly)
+    const d = new Date()
+    console.log(d)
+    console.log(d.toDateString() + ' ' + d.toTimeString())
   }
 }
 
