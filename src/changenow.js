@@ -6,7 +6,7 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const { checkSwapService } = require('./checkSwapService.js')
 
-const CHANGENOW_CACHE = './cnRaw.json'
+const CHANGENOW_CACHE = './cache/cnRaw.json'
 
 async function doChangenow (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchChangenow,

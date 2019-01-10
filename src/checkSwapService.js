@@ -110,7 +110,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
 async function getPairCached (currencyCode: string, date: string) {
   if (!ratesLoaded) {
     try {
-      ratePairs = js.readFileSync('./ratePairs.json')
+      ratePairs = js.readFileSync('./cache/ratePairs.json')
     } catch (e) {
       console.log(e)
     }
@@ -126,7 +126,7 @@ async function getPairCached (currencyCode: string, date: string) {
     }
     rate = await queryCoinApi(currencyCode, date)
     ratePairs[date][currencyCode] = rate
-    js.writeFileSync('./ratePairs.json', ratePairs)
+    js.writeFileSync('./cache/ratePairs.json', ratePairs)
   }
   return rate
 }
@@ -150,7 +150,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
     try {
       if (!btcRatesLoaded) {
         try {
-          btcRates = js.readFileSync('./btcRates.json')
+          btcRates = js.readFileSync('./cache/btcRates.json')
         } catch (e) {
           console.log(e)
         }
@@ -179,7 +179,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
       if (fromToUsd && toToUsd) {
         const rate = bns.div(fromToUsd, toToUsd, 8)
         btcRates[pair] = rate
-        js.writeFileSync('./btcRates.json', btcRates)
+        js.writeFileSync('./cache/btcRates.json', btcRates)
         return rate
       }
       return '0'

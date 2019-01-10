@@ -8,7 +8,7 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const { checkSwapService } = require('./checkSwapService.js')
 
-const SHAPESHIFT_CACHE = './ssRaw.json'
+const SHAPESHIFT_CACHE = './cache/ssRaw.json'
 
 async function doShapeShift (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchShapeShift,

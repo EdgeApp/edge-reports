@@ -7,7 +7,7 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const { checkSwapService } = require('./checkSwapService.js')
 
-const LIBERTYX_CACHE = './libertyxRaw.json'
+const LIBERTYX_CACHE = './cache/libertyxRaw.json'
 
 async function doLibertyX (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchLibertyX,

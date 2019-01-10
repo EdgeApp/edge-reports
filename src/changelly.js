@@ -6,7 +6,7 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const { checkSwapService } = require('./checkSwapService.js')
 
-const CHANGELLY_CACHE = './chRaw.json'
+const CHANGELLY_CACHE = './cache/chRaw.json'
 
 const changelly = new Changelly(
   config.changellyApiKey,
