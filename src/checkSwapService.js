@@ -81,7 +81,7 @@ function clearCache () {
 
 async function queryCoinApi (currencyCode: string, date: string) {
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
-  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z`
+  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
   //   if (!doSummary) {
   //     console.log(url)
@@ -89,10 +89,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
   let response
   try {
     response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-CoinAPI-Key': config.coinApiKey
-      }
+      method: 'GET'
     })
     const jsonObj = await response.json()
     if (!jsonObj.rate) {
