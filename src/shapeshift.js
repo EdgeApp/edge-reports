@@ -19,17 +19,20 @@ async function doShapeShift (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchShapeShift (swapFuncParams: SwapFuncParams) {
+  if (!swapFuncParams.useCache) {
+    console.log('Fetching Shapeshift...')
+  }
   let diskCache = { txs: [] }
   try {
     diskCache = js.readFileSync(SHAPESHIFT_CACHE)
   } catch (e) {}
-  const cachedTransactions = diskCache.txs
-  console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  // const cachedTransactions = diskCache.txs
+  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   let newTransactions = []
   let page = 0
 
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying shapeshift...`)
+    // console.log(`Querying shapeshift...`)
     try {
       const request = `https://shapeshift.io/client/transactions?limit=500&sort=DESC&page=${page}`
       const options = {

@@ -240,9 +240,8 @@ async function checkSwapService (
 
   if (!swapFuncParams.useCache) {
     console.log(
-      'Number of downloaded transactions: ' + newTransactions.length.toString()
+      `*** NEW TXS: ${numAdded.toString()} of downloaded: ${newTransactions.length.toString()}\n`
     )
-    console.log('Number of new transactions: ' + numAdded.toString())
   }
 
   diskCache.txs = cachedTransactions
@@ -360,10 +359,10 @@ async function checkSwapService (
   // console.log(txCountMap)
   // console.log(amountBtcMap)
   // console.log(avgBtcMap)
-  console.log(
-    'avg tx size: ' +
-      (parseInt(grandTotalAmount) / cachedTransactions.length).toString()
-  )
+  // console.log(
+  //   'avg tx size: ' +
+  //     (parseInt(grandTotalAmount) / cachedTransactions.length).toString()
+  // )
   return txDataMap
 }
 

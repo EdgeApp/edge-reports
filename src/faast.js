@@ -17,17 +17,20 @@ async function doFaast (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchFaast (swapFuncParams: SwapFuncParams) {
+  if (!swapFuncParams.useCache) {
+    console.log('Fetching Faast...')
+  }
   let diskCache = { txs: [] }
   try {
     diskCache = js.readFileSync(FILE_CACHE)
   } catch (e) {}
-  const cachedTransactions = diskCache.txs
-  console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  // const cachedTransactions = diskCache.txs
+  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   const newTransactions = []
   let page = 1
 
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying faast...`)
+    // console.log(`Querying faast...`)
     const nonce = String(Date.now())
     const signature = crypto
       .createHmac('sha256', config.faastSecret)

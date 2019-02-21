@@ -17,21 +17,24 @@ async function doChangenow (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchChangenow (swapFuncParams: SwapFuncParams) {
+  if (!swapFuncParams.useCache) {
+    console.log('Fetching Changenow...')
+  }
   let diskCache = { offset: 0, txs: [] }
   try {
     diskCache = js.readFileSync(CHANGENOW_CACHE)
   } catch (e) {}
-  const cachedTransactions = diskCache.txs
+  // const cachedTransactions = diskCache.txs
   let offset = diskCache.offset ? diskCache.offset : 0
-  console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
+  // console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
   const ssFormatTxs: Array<ShapeShiftTx> = []
 
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying offset ${offset}`)
+    // console.log(`Querying offset ${offset}`)
     const limit = 100
     const result = await fetch(`https://changenow.io//api/v1/transactions/${config.changenowApiKey}?limit=${limit}&offset=${offset}`)
     const txs = await result.json()
-    console.log(`Changenow: offset:${offset} count:${txs.length}`)
+    // console.log(`Changenow: offset:${offset} count:${txs.length}`)
 
     for (const tx of txs) {
       if (tx.status === 'finished') {
@@ -53,11 +56,11 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
       }
     }
     if (txs.length < 100) {
-      console.log('length < 100, stopping query')
+      // console.log('length < 100, stopping query')
       break
     }
 
-    console.log(`Changenow completed: ${ssFormatTxs.length}`)
+    // console.log(`Changenow completed: ${ssFormatTxs.length}`)
     offset += 100
   }
   diskCache.offset = offset

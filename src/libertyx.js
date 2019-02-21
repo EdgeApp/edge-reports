@@ -18,19 +18,22 @@ async function doLibertyX (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchLibertyX (swapFuncParams: SwapFuncParams) {
+  if (!swapFuncParams.useCache) {
+    console.log('Fetching Libertyx...')
+  }
   let diskCache = { txs: [] }
   try {
     diskCache = js.readFileSync(LIBERTYX_CACHE)
   } catch (e) {}
-  const cachedTransactions = diskCache.txs
-  console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  // const cachedTransactions = diskCache.txs
+  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   const newTransactions = []
 
   if (!swapFuncParams.useCache) {
-    console.log(`Querying libertyx...`)
+    // console.log(`Querying libertyx...`)
     const apiKey = config.libertyXApiKey
     const request = `https://libertyx.com/airbitz/stats`
-    console.log(request)
+    // console.log(request)
     let response
     try {
       response = await fetch(request, {

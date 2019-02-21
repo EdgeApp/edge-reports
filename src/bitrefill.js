@@ -24,19 +24,22 @@ async function doBitrefill (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
+  if (!swapFuncParams.useCache) {
+    console.log('Fetching Bitrefill...')
+  }
   let diskCache = { txs: [] }
   try {
     diskCache = js.readFileSync(CACHE_FILE)
   } catch (e) {}
-  const cachedTransactions = diskCache.txs
+  // const cachedTransactions = diskCache.txs
   // let offset = diskCache.offset ? diskCache.offset : 0
-  console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   const ssFormatTxs: Array<ShapeShiftTx> = []
 
   let url = `https://api.bitrefill.com/v1/orders/`
   let count = 0
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying url ${url}`)
+    // console.log(`Querying url ${url}`)
     // console.log(`Querying lastTxid ${lastTxid}`)
     // const limit = 100
     const result = await fetch(url, {
@@ -45,7 +48,7 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
     })
     const jsonObj = await result.json()
     const txs = (jsonObj && jsonObj.orders && jsonObj.orders.length) ? jsonObj.orders : []
-    console.log(`Bitrefill: count:${count} count:${txs.length}`)
+    // console.log(`Bitrefill: count:${count} count:${txs.length}`)
 
     for (const tx of txs) {
       if (
@@ -85,11 +88,11 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
       }
     }
     if (count > MAX_ITERATIONS) {
-      console.log('count > 9999')
+      // console.log('count > 9999')
       break
     }
 
-    console.log(`Bitrefill completed: ${ssFormatTxs.length}`)
+    // console.log(`Bitrefill completed: ${ssFormatTxs.length}`)
     if (jsonObj.nextUrl) {
       url = jsonObj.nextUrl
     } else {

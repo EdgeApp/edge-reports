@@ -47,18 +47,21 @@ const getTransactionsPromised = (
 }
 
 async function fetchChangelly (swapFuncParams: SwapFuncParams) {
+  if (!swapFuncParams.useCache) {
+    console.log('Fetching Changelly...')
+  }
   let diskCache = { txs: [] }
   try {
     diskCache = js.readFileSync(CHANGELLY_CACHE)
   } catch (e) {}
-  const cachedTransactions = diskCache.txs
-  console.log(`Read txs from cache: ${cachedTransactions.length}`)
+  // const cachedTransactions = diskCache.txs
+  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   // let offset = diskCache.offset ? diskCache.offset : 0
   let offset = 0
   const ssFormatTxs: Array<ShapeShiftTx> = []
 
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying offset ${offset}`)
+    // console.log(`Querying offset ${offset}`)
     const result = await getTransactionsPromised(
       100,
       offset,
@@ -66,7 +69,7 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
       undefined,
       undefined
     )
-    console.log(`Changelly: offset:${offset} count:${result.result.length}`)
+    // console.log(`Changelly: offset:${offset} count:${result.result.length}`)
 
     for (const tx of result.result) {
       if (tx.status === 'finished') {
@@ -85,13 +88,13 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
       }
     }
     if (result.result.length < 100) {
-      console.log('length < 100, stopping query')
+      // console.log('length < 100, stopping query')
       break
     }
 
-    console.log(`Changelly completed: ${ssFormatTxs.length}`)
+    // console.log(`Changelly completed: ${ssFormatTxs.length}`)
     if (offset > 300) {
-      console.log('length < 100, stopping query')
+      // console.log('length < 100, stopping query')
       break
     }
     offset += 100
