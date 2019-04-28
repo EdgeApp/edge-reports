@@ -79,6 +79,7 @@ function clearCache () {
   btcRatesLoaded = false
 }
 
+// only queries altcoin to USD
 async function queryCoinApi (currencyCode: string, date: string) {
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
   const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
@@ -128,6 +129,8 @@ async function getPairCached (currencyCode: string, date: string) {
   return rate
 }
 
+// kylan - problematic routine, should be called "getHistoricalRate"?
+
 async function getRate (opts: GetRateOptions): Promise<string> {
   const { from, to, year, month, day } = opts
   const date = `${year}-${month}-${day}`
@@ -137,8 +140,18 @@ async function getRate (opts: GetRateOptions): Promise<string> {
   let toToUsd
   try {
     if (btcRates[pair]) {
+      // these rates are not historical, only ad-hoc(?)
       throw new Error('blah')
     }
+    // if it doesn't exist then... look up historical rate relative to USD
+    // all data cached into btcRates is problematic because it's not historical
+    // goal is to harden getPairCached with coinmarketCap
+    // All code changes should fit into getPairCached
+    // try not to use btcRates
+    // do coinApi first then coinmarketCap?
+    // be careful that the date format uses relatively similar times of day (midnight?)
+    // make sure that the time has already passed
+    // remove any use of BTC rates in coinApi (or comment them out / disable them)
     fromToUsd = await getPairCached(from.toUpperCase(), date)
     toToUsd = await getPairCached(to.toUpperCase(), date)
     const finalRate = bns.div(fromToUsd, toToUsd, 8)
@@ -146,6 +159,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
   } catch (e) {
     try {
       if (!btcRatesLoaded) {
+        // check btcRates
         try {
           btcRates = js.readFileSync('./cache/btcRates.json')
         } catch (e) {
@@ -300,6 +314,7 @@ async function checkSwapService (
 
     let amountBtc: string = '0'
     let amountUsd: string = '0'
+    // kylan - libertyX gives USD amounts
     if (
       tx.inputCurrency === 'USD' &&
       tx.outputCurrency === 'USD'
@@ -307,9 +322,13 @@ async function checkSwapService (
       amountBtc = '0'
       amountUsd = tx.outputAmount
     } else {
+      // kylan - most partners
       if (tx.inputCurrency === 'BTC') {
         amountBtc = tx.inputAmount.toString()
       } else {
+        // kylan - part that gets broken
+        // get exchange currency and conver to BTC equivalent for that date and time
+        // then find out equivalent amount of BTC
         const rate = await getRate({
           from: tx.inputCurrency,
           to: 'BTC',
@@ -317,6 +336,7 @@ async function checkSwapService (
           month,
           day
         })
+        // convert BTC to USD
         amountBtc = bns.mul(rate, tx.inputAmount.toString())
       }
       const btcRate = await getPairCached(
@@ -325,7 +345,7 @@ async function checkSwapService (
       )
       amountUsd = bns.mul(amountBtc, btcRate)
     }
-
+    // now stick it into the txDataMap
     txDataMap[idx].amountBtc = bns.add(txDataMap[idx].amountBtc, amountBtc)
     txDataMap[idx].amountUsd = bns.add(txDataMap[idx].amountUsd, amountUsd)
     const rev = bns.mul(amountBtc, '0.0025')
@@ -335,7 +355,7 @@ async function checkSwapService (
     amountTotal = bns.add(amountTotal, amountBtc)
     grandTotalAmount = bns.add(grandTotalAmount, amountBtc)
     revTotal = bns.add(revTotal, rev)
-
+    // and also credit to altcoin numbers
     if (txDataMap[idx].currencyAmount[tx.inputCurrency] === undefined) {
       txDataMap[idx].currencyAmount[tx.inputCurrency] = '0'
     }
