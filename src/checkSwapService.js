@@ -87,6 +87,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
   //   if (!doSummary) {
   //     console.log(url)
   //   }
+  // console.log('kylan fetched url is: ', url)
   let response
   try {
     response = await fetch(url, {
@@ -94,12 +95,49 @@ async function queryCoinApi (currencyCode: string, date: string) {
     })
     const jsonObj = await response.json()
     if (!jsonObj.rate) {
-      throw new Error('No rate from CoinAPI')
+      return
     }
     return jsonObj.rate.toString()
   } catch (e) {
     // if (!doSummary) {
-    //   console.log(e)
+    console.log(e)
+    // }
+    throw e
+  }
+}
+
+// {
+//   "time": "2019-04-26T23:59:59.6886775Z",
+//   "asset_id_base": "BTC",
+//   "asset_id_quote": "USD",
+//   "rate": 5242.7856103737234839148323278
+// }
+
+// only queries altcoin to USD
+async function queryCoinMarketCap (currencyCode: string, date: string) {
+  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
+
+  console.log('kylan fetched cmc url is: ', url)
+  let response
+  const fetchOptions = {
+    method: 'GET',
+    headers: {
+      'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
+    },
+    json: true
+  }
+  // console.log('fetchOptions: ', fetchOptions)
+  try {
+    response = await fetch(url, fetchOptions)
+    const jsonObj = await response.json()
+    console.log('jsonObj.data.quotes[0].quote.USD is: ', jsonObj.data.quotes[0].quote.USD)
+    if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
+      throw new Error('No rate from CMC')
+    }
+    return jsonObj.data.quotes[0].quote.USD.price.toString()
+  } catch (e) {
+    // if (!doSummary) {
+    console.log('No CoinMarketCap quote: ', e)
     // }
     throw e
   }
@@ -116,13 +154,24 @@ async function getPairCached (currencyCode: string, date: string) {
   ratesLoaded = true
 
   let rate
+  // if the currency has a pair for the date
   if (ratePairs[date] && ratePairs[date][currencyCode]) {
     rate = ratePairs[date][currencyCode]
-  } else {
+  } else { // if the date does not exist or does not have a currency rate
     if (!ratePairs[date]) {
-      ratePairs[date] = {}
+      ratePairs[date] = {} // initialize the date
     }
     rate = await queryCoinApi(currencyCode, date)
+    if (!rate) {
+      const currentTimestamp = Date.now()
+      const targetDate = new Date(date)
+      const targetTimestamp = targetDate.getTime()
+      // if less than 90 days old (cmc API restriction)
+      if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
+        rate = await queryCoinMarketCap(currencyCode, date)
+        console.log('coinMarketCap rate is: ', rate)
+      }
+    }
     ratePairs[date][currencyCode] = rate
     js.writeFileSync('./cache/ratePairs.json', ratePairs)
   }
@@ -130,7 +179,6 @@ async function getPairCached (currencyCode: string, date: string) {
 }
 
 // kylan - problematic routine, should be called "getHistoricalRate"?
-
 async function getRate (opts: GetRateOptions): Promise<string> {
   const { from, to, year, month, day } = opts
   const date = `${year}-${month}-${day}`
@@ -140,6 +188,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
   let toToUsd
   try {
     if (btcRates[pair]) {
+      console.log('kylan btcRates exists for: ', pair, ' and date is: ', date)
       // these rates are not historical, only ad-hoc(?)
       throw new Error('blah')
     }
@@ -168,6 +217,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
         btcRatesLoaded = true
       }
       if (btcRates[pair]) {
+        console.log('kylan returning btcRates pair: ', pair)
         return btcRates[pair]
       }
 
