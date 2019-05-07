@@ -95,7 +95,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
     })
     const jsonObj = await response.json()
     if (!jsonObj.rate) {
-      return
+      throw new Error('No rate from CoinAPI')
     }
     return jsonObj.rate.toString()
   } catch (e) {
@@ -144,8 +144,10 @@ async function queryCoinMarketCap (currencyCode: string, date: string) {
 }
 
 async function getPairCached (currencyCode: string, date: string) {
+  // if the prices have NOT been loaded
   if (!ratesLoaded) {
     try {
+      // grab them from the persistent cache
       ratePairs = js.readFileSync('./cache/ratePairs.json')
     } catch (e) {
       console.log(e)
@@ -157,20 +159,23 @@ async function getPairCached (currencyCode: string, date: string) {
   // if the currency has a pair for the date
   if (ratePairs[date] && ratePairs[date][currencyCode]) {
     rate = ratePairs[date][currencyCode]
-  } else { // if the date does not exist or does not have a currency rate
+  } else {
+    // if the date does not exist or does not have a currency rate
     if (!ratePairs[date]) {
       ratePairs[date] = {} // initialize the date
     }
-    rate = await queryCoinApi(currencyCode, date)
+    const currentTimestamp = Date.now()
+    const targetDate = new Date(date)
+    const targetTimestamp = targetDate.getTime()
+    // if less than 90 days old (cmc API restriction)
+    if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
+      rate = await queryCoinMarketCap(currencyCode, date)
+      console.log('coinMarketCap rate is: ', rate)
+    }
     if (!rate) {
-      const currentTimestamp = Date.now()
-      const targetDate = new Date(date)
-      const targetTimestamp = targetDate.getTime()
-      // if less than 90 days old (cmc API restriction)
-      if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
-        rate = await queryCoinMarketCap(currencyCode, date)
-        console.log('coinMarketCap rate is: ', rate)
-      }
+      // only query coinApi if no rate loaded from cache or coinMarketCap
+      console.log('kylan no rate in cache or coinMarketCap, date is: ', date)
+      rate = await queryCoinApi(currencyCode, date)
     }
     ratePairs[date][currencyCode] = rate
     js.writeFileSync('./cache/ratePairs.json', ratePairs)
@@ -188,7 +193,6 @@ async function getRate (opts: GetRateOptions): Promise<string> {
   let toToUsd
   try {
     if (btcRates[pair]) {
-      console.log('kylan btcRates exists for: ', pair, ' and date is: ', date)
       // these rates are not historical, only ad-hoc(?)
       throw new Error('blah')
     }
@@ -217,7 +221,6 @@ async function getRate (opts: GetRateOptions): Promise<string> {
         btcRatesLoaded = true
       }
       if (btcRates[pair]) {
-        console.log('kylan returning btcRates pair: ', pair)
         return btcRates[pair]
       }
 
