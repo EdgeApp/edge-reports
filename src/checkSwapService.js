@@ -117,7 +117,6 @@ async function queryCoinApi (currencyCode: string, date: string) {
 async function queryCoinMarketCap (currencyCode: string, date: string) {
   const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
 
-  console.log('kylan fetched cmc url is: ', url)
   let response
   const fetchOptions = {
     method: 'GET',
@@ -130,7 +129,6 @@ async function queryCoinMarketCap (currencyCode: string, date: string) {
   try {
     response = await fetch(url, fetchOptions)
     const jsonObj = await response.json()
-    console.log('jsonObj.data.quotes[0].quote.USD is: ', jsonObj.data.quotes[0].quote.USD)
     if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
       throw new Error('No rate from CMC')
     }
@@ -170,11 +168,9 @@ async function getPairCached (currencyCode: string, date: string) {
     // if less than 90 days old (cmc API restriction)
     if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
       rate = await queryCoinMarketCap(currencyCode, date)
-      console.log('coinMarketCap rate is: ', rate)
     }
     if (!rate) {
       // only query coinApi if no rate loaded from cache or coinMarketCap
-      console.log('kylan no rate in cache or coinMarketCap, date is: ', date)
       rate = await queryCoinApi(currencyCode, date)
     }
     ratePairs[date][currencyCode] = rate
@@ -196,15 +192,6 @@ async function getRate (opts: GetRateOptions): Promise<string> {
       // these rates are not historical, only ad-hoc(?)
       throw new Error('blah')
     }
-    // if it doesn't exist then... look up historical rate relative to USD
-    // all data cached into btcRates is problematic because it's not historical
-    // goal is to harden getPairCached with coinmarketCap
-    // All code changes should fit into getPairCached
-    // try not to use btcRates
-    // do coinApi first then coinmarketCap?
-    // be careful that the date format uses relatively similar times of day (midnight?)
-    // make sure that the time has already passed
-    // remove any use of BTC rates in coinApi (or comment them out / disable them)
     fromToUsd = await getPairCached(from.toUpperCase(), date)
     toToUsd = await getPairCached(to.toUpperCase(), date)
     const finalRate = bns.div(fromToUsd, toToUsd, 8)
