@@ -18,12 +18,12 @@
   "author": "Paul Puey <paul@edgesecure.co>",
   "license": "ISC",
   "dependencies": {
+    "api-changelly": "git://github.com/changelly/api-changelly.git#8e350f3",
     "await-sleep": "0.0.1",
     "biggystring": "^3.0.1",
     "json-format": "^1.0.1",
     "jsonfile": "^4.0.0",
     "node-fetch": "^1.7.3",
-    "api-changelly": "git://github.com/changelly/api-changelly.git#8e350f3",
     "sprintf-js": "^1.1.1"
   },
   "devDependencies": {
