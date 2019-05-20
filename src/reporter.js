@@ -8,6 +8,8 @@ const { doBitrefill } = require('./bitrefill.js')
 const { doFaast } = require('./faast.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
+const nano = require('nano')('http://localhost:5984')
+const couch = nano.db.use('daily')
 
 async function main (swapFuncParams: SwapFuncParams) {
   const rChn = await doChangenow(swapFuncParams)
@@ -86,7 +88,7 @@ async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap }
   out.monthly = await doFunction({useCache: false, interval: 'month', endDate: '2018-01'})
 
   // console.log('**************************************************')
-  let end = Date.now() - 1000 * 60 * 60 * 24 * 60 // 60 days back
+  let end = Date.now() - 1000 * 60 * 60 * 24 * 180 // 60 days back
   let endDate = makeDate(end)
   // console.log(`******* Daily until ${endDate}`)
   out.daily = await doFunction({useCache: true, interval: 'day', endDate})
@@ -156,7 +158,7 @@ async function report (argv: Array<any>) {
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
-    printTxDataMap('TTS', results.daily)
+    await printTxDataMap('TTL', results.daily, true)
     console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
     combineResults(results, lxResults)
@@ -173,7 +175,7 @@ async function report (argv: Array<any>) {
   }
 }
 
-function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
+async function printTxDataMap (prefix: string, txDataMap: TxDataMap, daily?: boolean) {
   // Sort results first
   const txDataArray = []
   for (const d in txDataMap) {
@@ -194,6 +196,8 @@ function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
     // return a.date < b.date
     // return parseInt(a.date.replace(/-/g, '')) < parseInt(b.date.replace(/-/g, ''))
   })
+
+  const graphArray = []
 
   for (const d of txDataArray) {
     const avgBtc = bns.div(d.amountBtc, d.txCount.toString(), 6)
@@ -221,6 +225,8 @@ function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
       if (i > 5) break
     }
 
+    graphArray.push({ date: d.date, volume: amtUsd })
+
     const l = sprintf(
       '%s %s: %4s txs, %8.2f avgUSD, %2.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
       prefix,
@@ -233,6 +239,15 @@ function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
       currencyAmounts
     )
     console.log(l)
+  }
+  // write to couchDB
+  if (daily) {
+    try {
+      await couch.insert({ _id: 'graphData', _rev: '1-594bda68845352e8c1da3e5fd15cfa9e', dailySwapValues: graphArray }, 'graphData')
+      console.log('couchDB updated')
+    } catch (e) {
+      console.log('**COUCHDB NOT UPDATED CORRECTLY**')
+    }
   }
 }
 
