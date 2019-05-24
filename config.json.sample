@@ -5,5 +5,8 @@
     "outputDelay": 5000,
     "coinApiKey": "xxxx",
     "shapeShiftApiKey": "xxxx",
-    "libertyXApiKey": "xxx"
+    "libertyXApiKey": "xxx",
+    "godex": {
+            "apiKey": ""
+        }
 }

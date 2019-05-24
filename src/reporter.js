@@ -7,6 +7,7 @@ const { doChangenow } = require('./changenow.js')
 const { doBitrefill } = require('./bitrefill.js')
 const { doFaast } = require('./faast.js')
 const { sprintf } = require('sprintf-js')
+const { doGodex } = require('./godex.js')
 const { bns } = require('biggystring')
 
 async function main (swapFuncParams: SwapFuncParams) {
@@ -16,12 +17,14 @@ async function main (swapFuncParams: SwapFuncParams) {
   const rSsh = await doShapeShift(swapFuncParams)
   const rLbx = await doLibertyX(swapFuncParams)
   const rBit = await doBitrefill(swapFuncParams)
+  const rGdx = await doGodex(swapFuncParams)
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
   printTxDataMap('SSH', rSsh)
   printTxDataMap('LBX', rLbx)
   printTxDataMap('BIT', rBit)
+  printTxDataMap('GDX', rGdx)
   console.log(new Date(Date.now()))
 }
 
@@ -131,6 +134,8 @@ async function report (argv: Array<any>) {
     const chResults = await doSummaryFunction(doChangelly)
     const ssResults = await doSummaryFunction(doShapeShift)
     const faResults = await doSummaryFunction(doFaast)
+    const gxResults = await doSummaryFunction(doGodex)
+    combineResults(results, gxResults)
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
