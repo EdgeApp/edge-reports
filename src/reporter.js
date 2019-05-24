@@ -10,6 +10,7 @@ const { doFox } = require('./fox.js')
 const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
 const { sprintf } = require('sprintf-js')
+const { doGodex } = require('./godex.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 
@@ -23,6 +24,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   const rFox = await doFox(swapFuncParams)
   const rTl = await doTotle(swapFuncParams)
   const rCs = await doCoinswitch(swapFuncParams)
+  const rGdx = await doGodex(swapFuncParams)
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -32,6 +34,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('TOT', rTl)
   printTxDataMap('FOX', rFox)
   printTxDataMap('CS', rCs)
+  printTxDataMap('GDX', rGdx)
   console.log(new Date(Date.now()))
 }
 
@@ -145,6 +148,8 @@ async function report (argv: Array<any>) {
     const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
     const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
     const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
+    const gxResults = config.godex.apiKey ? await doSummaryFunction(doGodex) : {}
+    combineResults(results, gxResults)
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -154,6 +159,8 @@ async function report (argv: Array<any>) {
     combineResults(results, btResults)
     combineResults(results, foxResults)
     combineResults(results, csResults)
+
+    combineResults(results, gxResults)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
@@ -179,6 +186,10 @@ async function report (argv: Array<any>) {
     printTxDataMap('BIT', btResults.daily)
     console.log('\n***** Totle Daily *****')
     printTxDataMap('TOT', tlResults.daily)
+    console.log('\n***** GoDex Daily *****')
+    printTxDataMap('GX', gxResults.daily)
+    console.log('\n***** GoDex Monthly *****')
+    printTxDataMap('GX', gxResults.monthly)
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -191,10 +202,6 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTL', results.daily)
     console.log('\n***** Grand Totals Hourly *****')
     printTxDataMap('TTL', results.hourly)
-    console.log('\n***** CoinSwitch Daily *****')
-    printTxDataMap('CS', csResults.daily)
-    console.log('\n***** CoinSwitch Monthly *****')
-    printTxDataMap('CS', csResults.monthly)
     const d = new Date()
     console.log(d)
     console.log(d.toDateString() + ' ' + d.toTimeString())
