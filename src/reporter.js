@@ -11,6 +11,7 @@ const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
 const { doMoonpay } = require('./moonpay.js')
 const { sprintf } = require('sprintf-js')
+const { doGodex } = require('./godex.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 
@@ -55,6 +56,10 @@ async function main (swapFuncParams: SwapFuncParams) {
     console.error('doMoonpay failed')
     return {}
   })
+  const rGdx = await doGodex(swapFuncParams).catch(e => {
+    console.error('doMoonpay failed')
+    return {}
+  })
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -64,6 +69,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('TOT', rTl)
   printTxDataMap('FOX', rFox)
   printTxDataMap('CS', rCs)
+  printTxDataMap('GDX', rGdx)
   printTxDataMap('MNP', rMnp)
   console.log(new Date(Date.now()))
 }
@@ -213,9 +219,14 @@ async function report (argv: Array<any>) {
       config.coinswitch && config.coinswitch.apiKey
         ? await doSummaryFunction(doCoinswitch)
         : {}
+    const gxResults =
+      config.godex && config.godex.apiKey
+        ? await doSummaryFunction(doGodex)
+        : {}
     const mnpResults = config.moonpayApiKey
       ? await doSummaryFunction(doMoonpay)
       : {}
+
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -223,6 +234,10 @@ async function report (argv: Array<any>) {
     combineResults(results, tlResults)
     combineResults(results, foxResults)
     combineResults(results, csResults)
+    combineResults(results, lxResults)
+    combineResults(results, btResults)
+    combineResults(results, gxResults)
+    combineResults(results, mnpResults)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
@@ -252,6 +267,10 @@ async function report (argv: Array<any>) {
     printTxDataMap('LBX', lxResults.monthly)
     console.log('\n***** Libertyx Daily *****')
     printTxDataMap('LBX', lxResults.daily)
+    console.log('\n***** GoDex Daily *****')
+    printTxDataMap('GX', gxResults.daily)
+    console.log('\n***** GoDex Monthly *****')
+    printTxDataMap('GX', gxResults.monthly)
     console.log('\n***** Moonpay Monthly *****')
     printTxDataMap('MNP', mnpResults.monthly)
     console.log('\n***** Moonpay Daily *****')
@@ -263,9 +282,6 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTS', results.daily)
     console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
-    combineResults(results, lxResults)
-    combineResults(results, btResults)
-    combineResults(results, mnpResults)
 
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
