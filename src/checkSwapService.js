@@ -79,6 +79,7 @@ function clearCache () {
   btcRatesLoaded = false
 }
 
+// only queries altcoin to USD
 async function queryCoinApi (currencyCode: string, date: string) {
   // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
   const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
@@ -86,6 +87,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
   //   if (!doSummary) {
   //     console.log(url)
   //   }
+  // console.log('kylan fetched url is: ', url)
   let response
   try {
     response = await fetch(url, {
@@ -98,15 +100,52 @@ async function queryCoinApi (currencyCode: string, date: string) {
     return jsonObj.rate.toString()
   } catch (e) {
     // if (!doSummary) {
-    //   console.log(e)
+    console.log(e)
+    // }
+    throw e
+  }
+}
+
+// {
+//   "time": "2019-04-26T23:59:59.6886775Z",
+//   "asset_id_base": "BTC",
+//   "asset_id_quote": "USD",
+//   "rate": 5242.7856103737234839148323278
+// }
+
+// only queries altcoin to USD
+async function queryCoinMarketCap (currencyCode: string, date: string) {
+  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
+
+  let response
+  const fetchOptions = {
+    method: 'GET',
+    headers: {
+      'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
+    },
+    json: true
+  }
+  // console.log('fetchOptions: ', fetchOptions)
+  try {
+    response = await fetch(url, fetchOptions)
+    const jsonObj = await response.json()
+    if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
+      throw new Error('No rate from CMC')
+    }
+    return jsonObj.data.quotes[0].quote.USD.price.toString()
+  } catch (e) {
+    // if (!doSummary) {
+    console.log('No CoinMarketCap quote: ', e)
     // }
     throw e
   }
 }
 
 async function getPairCached (currencyCode: string, date: string) {
+  // if the prices have NOT been loaded
   if (!ratesLoaded) {
     try {
+      // grab them from the persistent cache
       ratePairs = js.readFileSync('./cache/ratePairs.json')
     } catch (e) {
       console.log(e)
@@ -115,19 +154,32 @@ async function getPairCached (currencyCode: string, date: string) {
   ratesLoaded = true
 
   let rate
+  // if the currency has a pair for the date
   if (ratePairs[date] && ratePairs[date][currencyCode]) {
     rate = ratePairs[date][currencyCode]
   } else {
+    // if the date does not exist or does not have a currency rate
     if (!ratePairs[date]) {
-      ratePairs[date] = {}
+      ratePairs[date] = {} // initialize the date
     }
-    rate = await queryCoinApi(currencyCode, date)
+    const currentTimestamp = Date.now()
+    const targetDate = new Date(date)
+    const targetTimestamp = targetDate.getTime()
+    // if less than 90 days old (cmc API restriction)
+    if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
+      rate = await queryCoinMarketCap(currencyCode, date)
+    }
+    if (!rate) {
+      // only query coinApi if no rate loaded from cache or coinMarketCap
+      rate = await queryCoinApi(currencyCode, date)
+    }
     ratePairs[date][currencyCode] = rate
     js.writeFileSync('./cache/ratePairs.json', ratePairs)
   }
   return rate
 }
 
+// kylan - problematic routine, should be called "getHistoricalRate"?
 async function getRate (opts: GetRateOptions): Promise<string> {
   const { from, to, year, month, day } = opts
   const date = `${year}-${month}-${day}`
@@ -137,6 +189,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
   let toToUsd
   try {
     if (btcRates[pair]) {
+      // these rates are not historical, only ad-hoc(?)
       throw new Error('blah')
     }
     fromToUsd = await getPairCached(from.toUpperCase(), date)
@@ -146,6 +199,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
   } catch (e) {
     try {
       if (!btcRatesLoaded) {
+        // check btcRates
         try {
           btcRates = js.readFileSync('./cache/btcRates.json')
         } catch (e) {
@@ -300,6 +354,7 @@ async function checkSwapService (
 
     let amountBtc: string = '0'
     let amountUsd: string = '0'
+    // kylan - libertyX gives USD amounts
     if (
       tx.inputCurrency === 'USD' &&
       tx.outputCurrency === 'USD'
@@ -307,9 +362,13 @@ async function checkSwapService (
       amountBtc = '0'
       amountUsd = tx.outputAmount
     } else {
+      // kylan - most partners
       if (tx.inputCurrency === 'BTC') {
         amountBtc = tx.inputAmount.toString()
       } else {
+        // kylan - part that gets broken
+        // get exchange currency and conver to BTC equivalent for that date and time
+        // then find out equivalent amount of BTC
         const rate = await getRate({
           from: tx.inputCurrency,
           to: 'BTC',
@@ -317,6 +376,7 @@ async function checkSwapService (
           month,
           day
         })
+        // convert BTC to USD
         amountBtc = bns.mul(rate, tx.inputAmount.toString())
       }
       const btcRate = await getPairCached(
@@ -325,7 +385,7 @@ async function checkSwapService (
       )
       amountUsd = bns.mul(amountBtc, btcRate)
     }
-
+    // now stick it into the txDataMap
     txDataMap[idx].amountBtc = bns.add(txDataMap[idx].amountBtc, amountBtc)
     txDataMap[idx].amountUsd = bns.add(txDataMap[idx].amountUsd, amountUsd)
     const rev = bns.mul(amountBtc, '0.0025')
@@ -335,7 +395,7 @@ async function checkSwapService (
     amountTotal = bns.add(amountTotal, amountBtc)
     grandTotalAmount = bns.add(grandTotalAmount, amountBtc)
     revTotal = bns.add(revTotal, rev)
-
+    // and also credit to altcoin numbers
     if (txDataMap[idx].currencyAmount[tx.inputCurrency] === undefined) {
       txDataMap[idx].currencyAmount[tx.inputCurrency] = '0'
     }
