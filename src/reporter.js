@@ -8,6 +8,7 @@ const { doBitrefill } = require('./bitrefill.js')
 const { doFaast } = require('./faast.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
+const config = require('../config.json')
 
 async function main (swapFuncParams: SwapFuncParams) {
   const rChn = await doChangenow(swapFuncParams)
@@ -127,16 +128,16 @@ async function report (argv: Array<any>) {
     await main(swapFuncParams)
   } else {
     const results: { [string]: TxDataMap } = {}
-    const cnResults = await doSummaryFunction(doChangenow)
-    const chResults = await doSummaryFunction(doChangelly)
-    const ssResults = await doSummaryFunction(doShapeShift)
-    const faResults = await doSummaryFunction(doFaast)
+    const cnResults = config.changenowApiKey ? await doSummaryFunction(doChangenow) : {}
+    const chResults = config.changellyApiKey ? await doSummaryFunction(doChangelly) : {}
+    const ssResults = config.shapeShiftApiKey ? await doSummaryFunction(doShapeShift) : {}
+    const faResults = config.faastAffiliateId ? await doSummaryFunction(doFaast) : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
     combineResults(results, ssResults)
-    const lxResults = await doSummaryFunction(doLibertyX)
-    const btResults = await doSummaryFunction(doBitrefill)
+    const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
+    const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
     console.log('\n***** Changelly Daily *****')

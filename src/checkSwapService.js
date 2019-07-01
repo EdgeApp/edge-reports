@@ -87,7 +87,6 @@ async function queryCoinApi (currencyCode: string, date: string) {
   //   if (!doSummary) {
   //     console.log(url)
   //   }
-  // console.log('kylan fetched url is: ', url)
   let response
   try {
     response = await fetch(url, {
@@ -142,6 +141,7 @@ async function queryCoinMarketCap (currencyCode: string, date: string) {
 }
 
 async function getPairCached (currencyCode: string, date: string) {
+  console.log('executing getPairCached, ratesLoaded: ', ratesLoaded)
   // if the prices have NOT been loaded
   if (!ratesLoaded) {
     try {
@@ -167,12 +167,24 @@ async function getPairCached (currencyCode: string, date: string) {
     const targetTimestamp = targetDate.getTime()
     // if less than 90 days old (cmc API restriction)
     if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
-      rate = await queryCoinMarketCap(currencyCode, date)
+      try {
+        rate = await queryCoinMarketCap(currencyCode, date)
+      } catch (e) {
+        console.log('queryCoinMarketCap error: ', e)
+      }
     }
     if (!rate) {
       // only query coinApi if no rate loaded from cache or coinMarketCap
-      rate = await queryCoinApi(currencyCode, date)
+      try {
+        rate = await queryCoinApi(currencyCode, date)
+      } catch (e) {
+        console.log('queryCoinApi error: ', e)
+      }
     }
+    if (!rate) {
+
+    }
+    console.log('toward end of getPairCached and rate is: ', rate)
     ratePairs[date][currencyCode] = rate
     js.writeFileSync('./cache/ratePairs.json', ratePairs)
   }
@@ -192,6 +204,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
       // these rates are not historical, only ad-hoc(?)
       throw new Error('blah')
     }
+    console.log('inside getRate, about to getPairCached')
     fromToUsd = await getPairCached(from.toUpperCase(), date)
     toToUsd = await getPairCached(to.toUpperCase(), date)
     const finalRate = bns.div(fromToUsd, toToUsd, 8)
@@ -210,7 +223,7 @@ async function getRate (opts: GetRateOptions): Promise<string> {
       if (btcRates[pair]) {
         return btcRates[pair]
       }
-
+      console.log('inside getRate catch clause, !_coincapQuery is: ', _coincapQuery)
       if (!_coincapQuery) {
         const request = `https://coincap.io/front`
         const response = await fetch(request)
