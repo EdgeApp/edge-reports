@@ -208,12 +208,28 @@ async function checkSwapService (
       // getHistoricalUsdRate tries to get rate from ratePairs.json cache
       // then query coinmarketCap, then coinapi until it finds a
       // USD rate for the currencyCode and date
-      const btcRate = await getHistoricalUsdRate(
+      let btcRate = await getHistoricalUsdRate(
         'BTC',
         `${year.toString()}-${month}-${day}`
       )
       // converts value in BTC to value in USD
-      amountUsd = bns.mul(amountBtc, btcRate)
+      if (btcRate) {
+        amountUsd = bns.mul(amountBtc, btcRate)
+      } else {
+        if (!_coincapResults) {
+          const request = `https://coincap.io/front`
+          const response = await fetch(request)
+          _coincapResults = await response.json()
+        }
+        const btcData = _coincapResults.find(currency => currency.short === 'BTC')
+        if (btcData) {
+          btcRate = btcData.price.toString()
+          amountUsd = bns.mul(amountBtc, btcRate)
+        } else {
+          console.log('Unable to calculate ANY fiat value for: ', tx.inputCurrency)
+          btcRate = '0'
+        }
+      }
     }
     // now stick it into the txDataMap
     txDataMap[idx].amountBtc = bns.add(txDataMap[idx].amountBtc, amountBtc)
@@ -269,7 +285,7 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
   }
   ratesLoaded = true
 
-  let rate
+  let rate = ''
   // if the currency has a pair for the date
   if (ratePairs[date] && ratePairs[date][currencyCode]) {
     rate = ratePairs[date][currencyCode]
@@ -282,15 +298,17 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     const targetDate = new Date(date)
     const targetTimestamp = targetDate.getTime()
     // if less than 90 days old (cmc API restriction)
-    if (currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
+    if (config.coinMarketCapAPiKey && currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
       rate = await queryCoinMarketCap(currencyCode, date)
     }
-    if (!rate) {
+    if (!rate && config.coinApiKey) {
       // only query coinApi if no rate loaded from cache or coinMarketCap
       rate = await queryCoinApi(currencyCode, date)
     }
-    ratePairs[date][currencyCode] = rate
-    js.writeFileSync('./cache/ratePairs.json', ratePairs)
+    if (rate) {
+      ratePairs[date][currencyCode] = rate
+      js.writeFileSync('./cache/ratePairs.json', ratePairs)
+    }
   }
   return rate
 }
@@ -307,7 +325,7 @@ async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
     // if the pair data already exists in memory (no date, though)...
     if (btcRates[pair]) {
       // these rates are not historical, only ad-hoc
-      console.log('ad-hoc rates are available in memory')
+      // console.log('ad-hoc crypto-to-BTC rates are available in memory')
     }
     fromToUsd = await getHistoricalUsdRate(from.toUpperCase(), date)
     toToUsd = await getHistoricalUsdRate(to.toUpperCase(), date)
