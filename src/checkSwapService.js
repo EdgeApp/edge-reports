@@ -362,13 +362,7 @@ async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
 
 // only queries altcoin to USD
 async function queryCoinApi (currencyCode: string, date: string) {
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
   const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-  //   if (!doSummary) {
-  //     console.log(url)
-  //   }
-  // console.log('kylan fetched url is: ', url)
   let response
   try {
     response = await fetch(url, {
@@ -376,7 +370,8 @@ async function queryCoinApi (currencyCode: string, date: string) {
     })
     const jsonObj = await response.json()
     if (!jsonObj.rate) {
-      throw new Error('No rate from CoinAPI')
+      console.log(`No rate from CoinAPI for ${currencyCode} on: ${date}`)
+      return ''
     }
     return jsonObj.rate.toString()
   } catch (e) {
