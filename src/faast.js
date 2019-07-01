@@ -1,6 +1,6 @@
 // @flow
 
-import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
+import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
 const crypto = require('crypto')
 const fetch = require('node-fetch')
@@ -54,7 +54,7 @@ async function fetchFaast (swapFuncParams: SwapFuncParams) {
           const date = new Date(tx.updated_at)
           const timestamp = date.getTime() / 1000
 
-          const ssTx: ShapeShiftTx = {
+          const ssTx: StandardTx = {
             status: 'complete',
             inputTXID: tx.transaction_id,
             inputAddress: tx.deposit_address,

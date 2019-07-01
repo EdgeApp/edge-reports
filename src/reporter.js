@@ -99,6 +99,7 @@ async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap }
   return out
 }
 
+// called by './report summary' from command line
 async function report (argv: Array<any>) {
   const d = new Date()
   console.log(d)
@@ -111,7 +112,7 @@ async function report (argv: Array<any>) {
       swapFuncParams.interval = arg
     } else if (arg === 'cache') {
       swapFuncParams.useCache = true
-    } else if (arg === 'summary') {
+    } else if (arg === 'summary') { // most common parameter
       doSummary = true
       break
     } else if (arg === 'nocache') {
@@ -123,9 +124,7 @@ async function report (argv: Array<any>) {
     }
   }
 
-  if (!doSummary) {
-    await main(swapFuncParams)
-  } else {
+  if (doSummary) {
     const results: { [string]: TxDataMap } = {}
     const cnResults = await doSummaryFunction(doChangenow)
     const chResults = await doSummaryFunction(doChangelly)
@@ -170,6 +169,8 @@ async function report (argv: Array<any>) {
     const d = new Date()
     console.log(d)
     console.log(d.toDateString() + ' ' + d.toTimeString())
+  } else {
+    await main(swapFuncParams)
   }
 }
 

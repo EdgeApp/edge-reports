@@ -1,5 +1,5 @@
 // @flow
-import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
+import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
 const fetch = require('node-fetch')
 const confFileName = './config.json'
@@ -27,7 +27,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
   // const cachedTransactions = diskCache.txs
   let offset = diskCache.offset ? diskCache.offset : 0
   // console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
-  const ssFormatTxs: Array<ShapeShiftTx> = []
+  const ssFormatTxs: Array<StandardTx> = []
 
   while (1 && !swapFuncParams.useCache) {
     // console.log(`Querying offset ${offset}`)
@@ -41,7 +41,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
         const date = new Date(tx.updatedAt)
         const timestamp = date.getTime() / 1000
 
-        const ssTx: ShapeShiftTx = {
+        const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: tx.payinHash,
           inputAddress: tx.payinAddress,
