@@ -1,0 +1,15 @@
+{
+  "txs": [
+    {
+      "status": "complete",
+      "inputTXID": "5d13c92ec4578f0004cc80db",
+      "inputAddress": "38JsSRoi2qhyTFojc2GfCL7j4Lc6nHfNQD",
+      "inputCurrency": "BTC",
+      "inputAmount": 0.001484,
+      "outputAddress": "",
+      "outputCurrency": "USD",
+      "outputAmount": 20.2,
+      "timestamp": 1561576664.746
+    }
+  ]
+}
