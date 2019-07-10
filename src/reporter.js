@@ -5,6 +5,7 @@ const { doChangelly } = require('./changelly.js')
 const { doLibertyX } = require('./libertyx.js')
 const { doChangenow } = require('./changenow.js')
 const { doBitrefill } = require('./bitrefill.js')
+const { doFox } = require('./foxExchange.js')
 const { doFaast } = require('./faast.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
@@ -17,12 +18,14 @@ async function main (swapFuncParams: SwapFuncParams) {
   const rSsh = await doShapeShift(swapFuncParams)
   const rLbx = await doLibertyX(swapFuncParams)
   const rBit = await doBitrefill(swapFuncParams)
+  const rFox = await doFox(swapFuncParams)
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
   printTxDataMap('SSH', rSsh)
   printTxDataMap('LBX', rLbx)
   printTxDataMap('BIT', rBit)
+  printTxDataMap('FOX', rFox)
   console.log(new Date(Date.now()))
 }
 
@@ -131,10 +134,12 @@ async function report (argv: Array<any>) {
     const chResults = config.changellyApiKey ? await doSummaryFunction(doChangelly) : {}
     const ssResults = config.shapeShiftApiKey ? await doSummaryFunction(doShapeShift) : {}
     const faResults = config.faastAffiliateId ? await doSummaryFunction(doFaast) : {}
+    const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
     combineResults(results, ssResults)
+    combineResults(results, foxResults)
     const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
     const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
     console.log('\n***** Change NOW Daily *****')
@@ -145,6 +150,8 @@ async function report (argv: Array<any>) {
     printTxDataMap('FAA', faResults.daily)
     console.log('\n***** Shapeshift Daily *****')
     printTxDataMap('SSH', ssResults.daily)
+    console.log('\n***** fox.exchange Daily *****')
+    printTxDataMap('SSH', foxResults.daily)
     console.log('\n***** Libertyx Monthly *****')
     printTxDataMap('LBX', lxResults.monthly)
     console.log('\n***** Libertyx Daily *****')
