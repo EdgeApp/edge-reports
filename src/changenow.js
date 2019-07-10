@@ -49,7 +49,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
           inputAmount: tx.amountSend,
           outputAddress: tx.payoutAddress,
           outputCurrency: tx.toCurrency.toUpperCase(),
-          outputAmount: tx.amountReceive.toString(),
+          outputAmount: tx.amountReceive ? tx.amountReceive.toString() : '0',
           timestamp
         }
         ssFormatTxs.push(ssTx)
