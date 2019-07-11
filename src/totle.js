@@ -1,46 +1,19 @@
 // @flow
 import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
 
-const js = require('jsonfile')
-const fetch = require('node-fetch')
-const Web3 = require('web3')
-const confFileName = './config.json'
-const { totleApiKey: affiliateAddress } = js.readFileSync(confFileName)
-const { checkSwapService } = require('./checkSwapService.js')
+const js                              = require('jsonfile')
+const fetch                           = require('node-fetch')
+const Web3                            = require('web3')
+const confFileName                    = './config.json'
+const {totleApiKey: partnerContractAddress} = js.readFileSync(confFileName)
+const {checkSwapService}              = require('./checkSwapService.js')
 
 const TOTLE_CACHE = './cache/tlRaw.json'
 
-const PRIMARY_ADDRESS = '0xCf686b9C6d185d0091d07Df8B9953702c78B0C20'
-const PRIMARY_ABI = [
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: false, name: 'id', type: 'bytes32' },
-      { indexed: false, name: 'totalEthTraded', type: 'uint256' },
-      { indexed: false, name: 'totalFee', type: 'uint256' },
-      { indexed: false, name: 'feeAccount', type: 'address' }
-    ],
-    name: 'LogRebalance',
-    type: 'event',
-    signature:
-      '0x5e7255197ab292e0e4ff7d5ec6990a0741484fb6ffc00989f0163e445accf7ff'
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: false, name: 'isSell', type: 'bool' },
-      { indexed: false, name: 'token', type: 'address' },
-      { indexed: false, name: 'ethAmount', type: 'uint256' },
-      { indexed: false, name: 'tokenAmount', type: 'uint256' }
-    ],
-    name: 'LogTrade',
-    type: 'event',
-    signature:
-      '0xc06a42f44fb6bcf7da1c50059cceb5b99a5a315a904dd33ac5fcf0f16b55dcdc'
-  }
-]
-
-const LOG_TRADE_ABI: Object = PRIMARY_ABI.find(({ name }) => name === 'LogTrade') || {}
+const PRIMARY_ADDRESS = '0xcd2053679De3BCf2b7E2C2EfB6B499C57701222c'
+const PRIMARY_ABI = [{"constant":true,"inputs":[],"name":"tokenTransferProxy","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"unpause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"signers","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"pause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_token","type":"address"},{"name":"_amount","type":"uint256"}],"name":"withdrawToken","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amount","type":"uint256"}],"name":"withdrawETH","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_tokenTransferProxy","type":"address"},{"name":"_signer","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"bytes32"},{"indexed":true,"name":"partnerContract","type":"address"},{"indexed":true,"name":"user","type":"address"}],"name":"LogSwapCollection","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"id","type":"bytes32"},{"indexed":false,"name":"sourceAsset","type":"address"},{"indexed":false,"name":"destinationAsset","type":"address"},{"indexed":false,"name":"sourceAmount","type":"uint256"},{"indexed":false,"name":"destinationAmount","type":"uint256"},{"indexed":false,"name":"feeAsset","type":"address"},{"indexed":false,"name":"feeAmount","type":"uint256"}],"name":"LogSwap","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"a","type":"string"},{"indexed":false,"name":"b","type":"uint256"},{"indexed":false,"name":"c","type":"bytes32"}],"name":"Log","type":"event"},{"anonymous":false,"inputs":[],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[],"name":"Unpaused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"}],"name":"OwnershipRenounced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"constant":false,"inputs":[{"components":[{"components":[{"components":[{"name":"sourceToken","type":"address"},{"name":"destinationToken","type":"address"},{"name":"amount","type":"uint256"},{"name":"isSourceAmount","type":"bool"},{"components":[{"name":"exchangeHandler","type":"address"},{"name":"encodedPayload","type":"bytes"}],"name":"orders","type":"tuple[]"}],"name":"trades","type":"tuple[]"},{"name":"minimumExchangeRate","type":"uint256"},{"name":"minimumDestinationAmount","type":"uint256"},{"name":"sourceAmount","type":"uint256"},{"name":"tradeToTakeFeeFrom","type":"uint256"},{"name":"takeFeeFromSource","type":"bool"},{"name":"redirectAddress","type":"address"},{"name":"required","type":"bool"}],"name":"swaps","type":"tuple[]"},{"name":"partnerContract","type":"address"},{"name":"expirationBlock","type":"uint256"},{"name":"id","type":"bytes32"},{"name":"v","type":"uint8"},{"name":"r","type":"bytes32"},{"name":"s","type":"bytes32"}],"name":"swaps","type":"tuple"}],"name":"performSwapCollection","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"name":"newSigner","type":"address"}],"name":"addSigner","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"signer","type":"address"}],"name":"removeSigner","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"a","type":"string"},{"name":"b","type":"uint256"},{"name":"c","type":"bytes32"}],"name":"log","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]
+const LOG_SWAP_COLLECTION_ABI = PRIMARY_ABI.find(({ name }) => name === 'LogSwapCollection')
+const LOG_SWAP_ABI = PRIMARY_ABI.find(({ name }) => name === 'LogSwap')
 const PARITY_NODE_WEBSOCKET = 'wss://node.totlesystem.com'
 const web3 = new Web3(
   new Web3.providers.WebsocketProvider(PARITY_NODE_WEBSOCKET)
@@ -70,53 +43,44 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
       ).then(res => res.json())
 
       const primary = new web3.eth.Contract(PRIMARY_ABI, PRIMARY_ADDRESS)
-      const events = await primary.getPastEvents('LogRebalance', {
+      const swapCollectionEvents = await primary.getPastEvents('LogSwapCollection', {
+        filter: { partnerContract: partnerContractAddress },
         fromBlock: 7000000,
         toBlock: 'latest'
       })
 
-      for (const event of events) {
-        const { feeAccount } = event.returnValues
+      const txs = []
 
-        if (feeAccount.toLowerCase() !== affiliateAddress) continue
+      const payloadIds = swapCollectionEvents.map((e) => e.returnValues.id).filter((id, i, self) => self.indexOf(id) === i)
+      for (const id of payloadIds) {
+        const swapEvents = await primary.getPastEvents('LogSwap', {
+          filter: { id },
+          fromBlock: 7000000,
+          toBlock  : 'latest'
+        })
 
-        const { timestamp } = await web3.eth.getBlock(event.blockNumber)
+        for (const swapEvent of swapEvents) {
+          const { sourceAsset, destinationAsset, sourceAmount, destinationAmount } = swapEvent.returnValues
 
-        const receipt = await web3.eth.getTransactionReceipt(
-          event.transactionHash
-        )
-        const logs = receipt.logs.filter(
-          ({ topics: [topic] }) => topic === LOG_TRADE_ABI.signature
-        )
-        for (const log of logs) {
-          const {
-            isSell,
-            token: tokenAddress,
-            tokenAmount,
-            ethAmount
-          } = web3.eth.abi.decodeLog(
-            LOG_TRADE_ABI.inputs,
-            log.data,
-            log.topics
-          )
+          const {timestamp} = await web3.eth.getBlock(swapEvent.blockNumber)
 
-          const token = tokens.find(
-            t => t.address.toLowerCase() === tokenAddress.toLowerCase()
-          )
+          const receipt = await web3.eth.getTransactionReceipt(swapEvent.transactionHash)
+
+          const sourceToken = tokens.find((t) => t.address.toLowerCase() === sourceAsset.toLowerCase())
+          const destinationToken = tokens.find((t) => t.address.toLowerCase() === destinationAsset.toLowerCase())
+
           // Cannot find token
-          if (!token) continue
+          if (!sourceToken || !destinationToken) continue
 
           const ssTx: ShapeShiftTx = {
-            status: 'complete',
-            inputTXID: receipt.transactionHash,
-            inputAddress: receipt.from,
-            inputCurrency: isSell ? token.symbol : 'ETH',
-            inputAmount: isSell ? tokenAmount.toString() : ethAmount.toString(),
-            outputAddress: receipt.from,
-            outputCurrency: isSell ? 'ETH' : token.symbol,
-            outputAmount: isSell
-              ? ethAmount.toString()
-              : tokenAmount.toString(),
+            status        : 'complete',
+            inputTXID     : receipt.transactionHash,
+            inputAddress  : receipt.from,
+            inputCurrency : sourceToken.symbol,
+            inputAmount   : sourceAmount.toString(),
+            outputAddress : receipt.from,
+            outputCurrency: destinationToken.symbol,
+            outputAmount  : destinationAmount.toString(),
             timestamp
           }
           console.log(ssTx)
