@@ -32,7 +32,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
   while (1 && !swapFuncParams.useCache) {
     // console.log(`Querying offset ${offset}`)
     const limit = 100
-    const result = await fetch(`https://changenow.io//api/v1/transactions/${config.changenowApiKey}?limit=${limit}&offset=${offset}`)
+    const result = await fetch(`https://changenow.io/api/v1/transactions/${config.changenowApiKey}?limit=${limit}&offset=${offset}`)
     const txs = await result.json()
     // console.log(`Changenow: offset:${offset} count:${txs.length}`)
 
