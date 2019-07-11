@@ -1,6 +1,6 @@
 // @flow
 import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
-const Changelly = require('api-changelly/lib.js')
+const Changelly = require('changelly_api/lib.js')
 const js = require('jsonfile')
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
