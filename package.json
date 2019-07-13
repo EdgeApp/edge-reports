@@ -21,9 +21,11 @@
     "api-changelly": "git://github.com/changelly/api-changelly.git#8e350f3",
     "await-sleep": "0.0.1",
     "biggystring": "^3.0.1",
+    "changelly_api": "git://github.com/changelly/api-changelly.git#8e350f3",
     "json-format": "^1.0.1",
     "jsonfile": "^4.0.0",
     "node-fetch": "^1.7.3",
+    "web3": "^1.0.0-beta.52",
     "sprintf-js": "^1.1.1"
   },
   "devDependencies": {
