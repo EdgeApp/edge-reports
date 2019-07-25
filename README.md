@@ -1,4 +1,6 @@
 # edge-reports
-Reporting tools for partner rev share
+Reporting tool for partners of Edge. Required for any integrations involving financial transactions
 
-** Readme is still under construction, for help submitting a PR for your exchange please contact the Edge team at the `dev` slack channel: https://edgesecure.slack.com/messages/C3LJWEXEK **
+# Instructions:
+
+Please check out the `partnerTemplate` branch and read the instructions there. Apply your commits on top of that branch and submit a pull request (and notify us) when done. If you have any questions then please visit our (Slack channel)[https://edgesecure.slack.com/messages/C3LJWEXEK]
