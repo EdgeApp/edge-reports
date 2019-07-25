@@ -3,4 +3,4 @@ Reporting tool for partners of Edge. Required for any integrations involving fin
 
 # Instructions:
 
-Please check out the `partnerTemplate` branch and read the instructions there. Apply your commits on top of that branch and submit a pull request (and notify us) when done. If you have any questions then please visit our (Slack channel)[https://edgesecure.slack.com/messages/C3LJWEXEK]
+Please check out the `partnerTemplate` branch and read the instructions there. Apply your commits on top of that branch and submit a pull request (and notify us) when done. If you have any questions then please visit our slack channel: https://edgesecure.slack.com/messages/C3LJWEXEK
