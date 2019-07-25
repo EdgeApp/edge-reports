@@ -1,5 +1,5 @@
 // @flow
-import type {ShapeShiftTx, SwapFuncParams} from './checkSwapService.js'
+import type {StandardTx, SwapFuncParams} from './checkSwapService.js'
 
 const js = require('jsonfile')
 const fetch = require('node-fetch')
@@ -278,7 +278,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
   const offset = diskCache.offset ? diskCache.offset : 7000000
   const currentBlockNumber = await web3.eth.getBlockNumber()
   console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
-  const ssFormatTxs: Array<ShapeShiftTx> = []
+  const ssFormatTxs: Array<StandardTx> = []
 
   try {
     const { tokens } = await fetch('https://services.totlesystem.com/tokens').then((res) => res.json())
@@ -308,7 +308,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
 
         // Cannot find token
         if (!sourceToken || !destinationToken) continue
-        const ssTx: ShapeShiftTx = {
+        const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: receipt.transactionHash,
           inputAddress: receipt.from,

@@ -1,0 +1,27 @@
+{
+  "status": {
+    "timestamp": "2019-07-25T02:10:26.958Z",
+    "error_code": 0,
+    "error_message": null,
+    "elapsed": 9,
+    "credit_count": 1
+  },
+  "data": {
+    "id": 1,
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "quotes": [
+      {
+        "timestamp": "2019-06-13T23:59:00.000Z",
+        "quote": {
+          "USD": {
+            "price": 8230.92383068,
+            "volume_24h": 18669407147.4338,
+            "market_cap": 146160317148.19452,
+            "timestamp": "2019-06-13T23:59:00.000Z"
+          }
+        }
+      }
+    ]
+  }
+}

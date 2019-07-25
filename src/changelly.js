@@ -1,6 +1,6 @@
 // @flow
-import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
-const Changelly = require('changelly_api/lib.js')
+import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
+const Changelly = require('api-changelly/lib.js')
 const js = require('jsonfile')
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
@@ -58,7 +58,7 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
   // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   // let offset = diskCache.offset ? diskCache.offset : 0
   let offset = 0
-  const ssFormatTxs: Array<ShapeShiftTx> = []
+  const ssFormatTxs: Array<StandardTx> = []
 
   while (1 && !swapFuncParams.useCache) {
     // console.log(`Querying offset ${offset}`)
@@ -73,7 +73,7 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
 
     for (const tx of result.result) {
       if (tx.status === 'finished') {
-        const ssTx: ShapeShiftTx = {
+        const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: tx.payinHash,
           inputAddress: tx.payinAddress,

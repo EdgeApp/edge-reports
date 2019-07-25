@@ -1,5 +1,5 @@
 // @flow
-import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
+import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
 const fetch = require('node-fetch')
 const confFileName = './config.json'
@@ -34,7 +34,7 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
   // const cachedTransactions = diskCache.txs
   // let offset = diskCache.offset ? diskCache.offset : 0
   // console.log(`Read txs from cache: ${cachedTransactions.length}`)
-  const ssFormatTxs: Array<ShapeShiftTx> = []
+  const ssFormatTxs: Array<StandardTx> = []
 
   let url = `https://api.bitrefill.com/v1/orders/`
   let count = 0
@@ -73,7 +73,7 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
         if (tx.payment) {
           inputAddress = tx.payment.address
         }
-        const ssTx: ShapeShiftTx = {
+        const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: tx.orderId,
           inputAddress,
