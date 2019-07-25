@@ -157,7 +157,7 @@ async function report (argv: Array<any>) {
     console.log('\n***** Faast Daily *****')
     printTxDataMap('FAA', faResults.daily)
     console.log('\n***** fox.exchange Daily *****')
-    printTxDataMap('FOX', foxResults.daily)    
+    printTxDataMap('FOX', foxResults.daily)
     console.log('\n***** Shapeshift Daily *****')
     printTxDataMap('SSH', ssResults.daily)
     console.log('\n***** Shapeshift Monthly *****')

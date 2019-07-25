@@ -325,7 +325,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
     }
 
     // console.log(ssFormatTxs.length)
-    console.log('done....')
+    // console.log('done....')
   } catch (err) {
     console.log(err)
   }
