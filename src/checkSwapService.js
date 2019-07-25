@@ -101,6 +101,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
   } catch (e) {
     // if (!doSummary) {
     console.log(e)
+    console.log(`${date} ${currencyCode}`)
     // }
     throw e
   }

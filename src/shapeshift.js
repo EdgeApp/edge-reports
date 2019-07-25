@@ -3,7 +3,7 @@
 import type { SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
 const fetch = require('node-fetch')
-const SS_QUERY_PAGES = 3
+const SS_QUERY_PAGES = 2
 const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const { checkSwapService } = require('./checkSwapService.js')
@@ -32,7 +32,7 @@ async function fetchShapeShift (swapFuncParams: SwapFuncParams) {
   let page = 0
 
   while (1 && !swapFuncParams.useCache) {
-    // console.log(`Querying shapeshift...`)
+    console.log(`Querying shapeshift... page ${page}`)
     try {
       const request = `https://shapeshift.io/client/transactions?limit=500&sort=DESC&page=${page}`
       const options = {
@@ -47,6 +47,9 @@ async function fetchShapeShift (swapFuncParams: SwapFuncParams) {
       const response = await fetch(request, options)
       const txs = await response.json()
       newTransactions = newTransactions.concat(txs)
+      if (txs.length < 500) {
+        break
+      }
     } catch (e) {
       break
     }
