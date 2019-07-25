@@ -34,7 +34,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
     const limit = 100
     const result = await fetch(`https://changenow.io/api/v1/transactions/${config.changenowApiKey}?limit=${limit}&offset=${offset}`)
     const txs = await result.json()
-    // console.log(`Changenow: offset:${offset} count:${txs.length}`)
+    console.log(`Changenow: offset:${offset} count:${txs.length}`)
 
     for (const tx of txs) {
       if (tx.status === 'finished') {
@@ -63,7 +63,7 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
     // console.log(`Changenow completed: ${ssFormatTxs.length}`)
     offset += 100
   }
-  diskCache.offset = offset
+  diskCache.offset = offset - 500
   const out = {
     diskCache,
     newTransactions: ssFormatTxs

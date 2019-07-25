@@ -156,10 +156,14 @@ async function report (argv: Array<any>) {
     printTxDataMap('CHA', chResults.daily)
     console.log('\n***** Faast Daily *****')
     printTxDataMap('FAA', faResults.daily)
+    console.log('\n***** fox.exchange Daily *****')
+    printTxDataMap('FOX', foxResults.daily)    
     console.log('\n***** Shapeshift Daily *****')
     printTxDataMap('SSH', ssResults.daily)
-    console.log('\n***** fox.exchange Daily *****')
-    printTxDataMap('SSH', foxResults.daily)
+    console.log('\n***** Shapeshift Monthly *****')
+    printTxDataMap('SSH', ssResults.monthly)
+    console.log('\n***** Changelly Monthly *****')
+    printTxDataMap('CHA', chResults.monthly)
     console.log('\n***** Libertyx Monthly *****')
     printTxDataMap('LBX', lxResults.monthly)
     console.log('\n***** Libertyx Daily *****')
@@ -213,10 +217,10 @@ function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
   })
 
   for (const d of txDataArray) {
-    const avgBtc = bns.div(d.amountBtc, d.txCount.toString(), 6)
-    const avgUsd = bns.div(d.amountUsd, d.txCount.toString(), 2)
-    const amtBtc = bns.div(d.amountBtc, '1', 6)
-    const amtUsd = bns.div(d.amountUsd, '1', 2)
+    const avgBtc = bns.div(d.amountBtc, d.txCount.toString(), 3)
+    const avgUsd = bns.div(d.amountUsd, d.txCount.toString(), 0)
+    const amtBtc = bns.div(d.amountBtc, '1', 3)
+    const amtUsd = bns.div(d.amountUsd, '1', 0)
     // const c = padSpace(txCountMap[d], 3)
 
     let currencyAmounts = ''
@@ -232,14 +236,14 @@ function printTxDataMap (prefix: string, txDataMap: TxDataMap) {
     let i = 0
     for (const c of currencyAmountArray) {
       let a = c.amount
-      a = bns.div(a, '1', 2)
+      a = bns.div(a, '1', 0)
       currencyAmounts += `${c.code}:${a} `
       i++
-      if (i > 5) break
+      if (i > 12) break
     }
 
     const l = sprintf(
-      '%s %s: %4s txs, %8.2f avgUSD, %2.5f avgBTC, %9.2f USD, %2.5f BTC, %s',
+      '%s %s: %4s txs, %5.0f avgUSD, %5.2f avgBTC, %6.0f USD, %5.2f BTC, %s',
       prefix,
       d.date,
       d.txCount,
