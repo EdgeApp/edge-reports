@@ -6,9 +6,11 @@ const { doLibertyX } = require('./libertyx.js')
 const { doChangenow } = require('./changenow.js')
 const { doBitrefill } = require('./bitrefill.js')
 const { doTotle } = require('./totle.js')
+const { doFox } = require('./fox.js')
 const { doFaast } = require('./faast.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
+const config = require('../config.json')
 
 async function main (swapFuncParams: SwapFuncParams) {
   const rChn = await doChangenow(swapFuncParams)
@@ -17,12 +19,16 @@ async function main (swapFuncParams: SwapFuncParams) {
   const rSsh = await doShapeShift(swapFuncParams)
   const rLbx = await doLibertyX(swapFuncParams)
   const rBit = await doBitrefill(swapFuncParams)
+  const rFox = await doFox(swapFuncParams)
+  const rTl = await doTotle(swapFuncParams)
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
   printTxDataMap('SSH', rSsh)
   printTxDataMap('LBX', rLbx)
   printTxDataMap('BIT', rBit)
+  printTxDataMap('TOT', rTl)
+  printTxDataMap('FOX', rFox)
   console.log(new Date(Date.now()))
 }
 
@@ -100,6 +106,7 @@ async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap }
   return out
 }
 
+// called by './report summary' from command line
 async function report (argv: Array<any>) {
   const d = new Date()
   console.log(d)
@@ -112,7 +119,7 @@ async function report (argv: Array<any>) {
       swapFuncParams.interval = arg
     } else if (arg === 'cache') {
       swapFuncParams.useCache = true
-    } else if (arg === 'summary') {
+    } else if (arg === 'summary') { // most common parameter
       doSummary = true
       break
     } else if (arg === 'nocache') {
@@ -124,22 +131,25 @@ async function report (argv: Array<any>) {
     }
   }
 
-  if (!doSummary) {
-    await main(swapFuncParams)
-  } else {
+  if (doSummary) {
     const results: { [string]: TxDataMap } = {}
-    const cnResults = await doSummaryFunction(doChangenow)
-    const chResults = await doSummaryFunction(doChangelly)
-    const ssResults = await doSummaryFunction(doShapeShift)
-    const faResults = await doSummaryFunction(doFaast)
-    const tlResults = await doSummaryFunction(doTotle)
+    const cnResults = config.changenowApiKey ? await doSummaryFunction(doChangenow) : {}
+    const chResults = config.changellyApiKey ? await doSummaryFunction(doChangelly) : {}
+    const ssResults = config.shapeShiftApiKey ? await doSummaryFunction(doShapeShift) : {}
+    const faResults = config.faastAffiliateId ? await doSummaryFunction(doFaast) : {}
+    const tlResults = config.totleApiKey ? await doSummaryFunction(doTotle) : {}
+    const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
+    const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
+    const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
     combineResults(results, ssResults)
     combineResults(results, tlResults)
-    const lxResults = await doSummaryFunction(doLibertyX)
-    const btResults = await doSummaryFunction(doBitrefill)
+    combineResults(results, lxResults)
+    combineResults(results, btResults)
+    combineResults(results, foxResults)
+
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
     console.log('\n***** Changelly Daily *****')
@@ -148,6 +158,8 @@ async function report (argv: Array<any>) {
     printTxDataMap('FAA', faResults.daily)
     console.log('\n***** Shapeshift Daily *****')
     printTxDataMap('SSH', ssResults.daily)
+    console.log('\n***** fox.exchange Daily *****')
+    printTxDataMap('SSH', foxResults.daily)
     console.log('\n***** Libertyx Monthly *****')
     printTxDataMap('LBX', lxResults.monthly)
     console.log('\n***** Libertyx Daily *****')
@@ -164,8 +176,6 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTS', results.daily)
     console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
-    combineResults(results, lxResults)
-    combineResults(results, btResults)
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
     console.log('\n***** Grand Totals Daily *****')
@@ -175,6 +185,8 @@ async function report (argv: Array<any>) {
     const d = new Date()
     console.log(d)
     console.log(d.toDateString() + ' ' + d.toTimeString())
+  } else {
+    await main(swapFuncParams)
   }
 }
 

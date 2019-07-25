@@ -1,6 +1,6 @@
 // @flow
 
-import type { ShapeShiftTx, SwapFuncParams } from './checkSwapService.js'
+import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
 const fetch = require('node-fetch')
 const confFileName = './config.json'
@@ -49,7 +49,7 @@ async function fetchLibertyX (swapFuncParams: SwapFuncParams) {
         }
         const date = new Date(tx.date_us_eastern)
         const timestamp = date.getTime() / 1000
-        const ssTx: ShapeShiftTx = {
+        const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: tx.date_us_eastern,
           inputAddress: '',
