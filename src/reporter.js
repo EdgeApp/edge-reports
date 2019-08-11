@@ -8,6 +8,7 @@ const { doBitrefill, isConfigValid: isConfigValidBitrefill } = require('./bitref
 const { doTotle, isConfigValid: isConfigValidTotle } = require('./totle.js')
 const { doFox, isConfigValid: isConfigValidFox } = require('./fox.js')
 const { doFaast, isConfigValid: isConfigValidFaast } = require('./faast.js')
+const { doMoonpay, isConfigValid: isConfigValidMoonpay } = require('./moonpay.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
 
@@ -20,6 +21,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   await printDataOrError(swapFuncParams, doBitrefill, 'BIT', isConfigValidBitrefill)
   await printDataOrError(swapFuncParams, doTotle, 'TOT', isConfigValidTotle)
   await printDataOrError(swapFuncParams, doFox, 'FOX', isConfigValidFox)
+  await printDataOrError(swapFuncParams, doMoonpay, 'MNP', isConfigValidMoonpay)
   console.log(new Date(Date.now()))
 }
 
@@ -213,6 +215,15 @@ async function report (argv: Array<any>) {
       printTxDataMap('TOT', doResults.daily)
     } else {
       printNotConfigured('TOT')
+    }
+
+    if (isConfigValidMoonpay) {
+      const doResults = await doSummaryFunction(doMoonpay)
+      combineResults(results, doResults)
+      console.log('\n***** Moonpay Daily *****')
+      printTxDataMap('', doResults.daily)
+    } else {
+      printNotConfigured('MNP')
     }
 
     console.log('\n***** Swap Totals Monthly*****')
