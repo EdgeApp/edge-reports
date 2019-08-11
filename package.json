@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node lib/reporter.js",
+    "start": "node lib/report.js",
     "cache": "node lib/reporter.js ssRaw.json",
     "build": "flow-remove-types src/ -d lib/",
     "build:clean": "rimraf lib",

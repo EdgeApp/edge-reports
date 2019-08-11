@@ -10,6 +10,8 @@ const {checkSwapService} = require('./checkSwapService.js')
 
 const TOTLE_CACHE = './cache/tlRaw.json'
 
+const isConfigValid = (typeof partnerContractAddress !== 'undefined')
+
 const PRIMARY_ADDRESS = '0xcd2053679De3BCf2b7E2C2EfB6B499C57701222c'
 const PRIMARY_ABI = [
   {
@@ -338,4 +340,4 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = {doTotle}
+module.exports = {doTotle, isConfigValid}

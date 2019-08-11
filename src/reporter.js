@@ -1,35 +1,36 @@
 // @flow
 import type { SwapFuncParams, TxDataMap } from './checkSwapService.js'
-const { doShapeShift } = require('./shapeshift.js')
-const { doChangelly } = require('./changelly.js')
-const { doLibertyX } = require('./libertyx.js')
-const { doChangenow } = require('./changenow.js')
-const { doBitrefill } = require('./bitrefill.js')
-const { doTotle } = require('./totle.js')
-const { doFox } = require('./fox.js')
-const { doFaast } = require('./faast.js')
+const { doShapeShift, isConfigValid: isConfigValidShapeShift } = require('./shapeshift.js')
+const { doChangelly, isConfigValid: isConfigValidChangelly } = require('./changelly.js')
+const { doLibertyX, isConfigValid: isConfigValidLibertyx } = require('./libertyx.js')
+const { doChangenow, isConfigValid: isConfigValidChangenow } = require('./changenow.js')
+const { doBitrefill, isConfigValid: isConfigValidBitrefill } = require('./bitrefill.js')
+const { doTotle, isConfigValid: isConfigValidTotle } = require('./totle.js')
+const { doFox, isConfigValid: isConfigValidFox } = require('./fox.js')
+const { doFaast, isConfigValid: isConfigValidFaast } = require('./faast.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
-const config = require('../config.json')
 
 async function main (swapFuncParams: SwapFuncParams) {
-  const rChn = await doChangenow(swapFuncParams)
-  const rCha = await doChangelly(swapFuncParams)
-  const rFaa = await doFaast(swapFuncParams)
-  const rSsh = await doShapeShift(swapFuncParams)
-  const rLbx = await doLibertyX(swapFuncParams)
-  const rBit = await doBitrefill(swapFuncParams)
-  const rFox = await doFox(swapFuncParams)
-  const rTl = await doTotle(swapFuncParams)
-  printTxDataMap('CHN', rChn)
-  printTxDataMap('CHA', rCha)
-  printTxDataMap('FAA', rFaa)
-  printTxDataMap('SSH', rSsh)
-  printTxDataMap('LBX', rLbx)
-  printTxDataMap('BIT', rBit)
-  printTxDataMap('TOT', rTl)
-  printTxDataMap('FOX', rFox)
+  await printDataOrError(swapFuncParams, doChangelly, 'CHA', isConfigValidChangelly)
+  await printDataOrError(swapFuncParams, doShapeShift, 'SSH', isConfigValidShapeShift)
+  await printDataOrError(swapFuncParams, doLibertyX, 'LBX', isConfigValidLibertyx)
+  await printDataOrError(swapFuncParams, doChangenow, 'CHN', isConfigValidChangenow)
+  await printDataOrError(swapFuncParams, doFaast, 'FAA', isConfigValidFaast)
+  await printDataOrError(swapFuncParams, doBitrefill, 'BIT', isConfigValidBitrefill)
+  await printDataOrError(swapFuncParams, doTotle, 'TOT', isConfigValidTotle)
+  await printDataOrError(swapFuncParams, doFox, 'FOX', isConfigValidFox)
   console.log(new Date(Date.now()))
+}
+
+async function printDataOrError (swapFuncParams: SwapFuncParams, doFunction: Function, svcName: string, isConfigValid: boolean) {
+  if (isConfigValid) {
+    const data = await doFunction(swapFuncParams)
+    return printTxDataMap(svcName, data)
+  } else {
+    printNotConfigured(svcName)
+    return Promise.resolve()
+  }
 }
 
 function makeDate (endTime) {
@@ -133,47 +134,87 @@ async function report (argv: Array<any>) {
 
   if (doSummary) {
     const results: { [string]: TxDataMap } = {}
-    const cnResults = config.changenowApiKey ? await doSummaryFunction(doChangenow) : {}
-    const chResults = config.changellyApiKey ? await doSummaryFunction(doChangelly) : {}
-    const ssResults = config.shapeShiftApiKey ? await doSummaryFunction(doShapeShift) : {}
-    const faResults = config.faastAffiliateId ? await doSummaryFunction(doFaast) : {}
-    const tlResults = config.totleApiKey ? await doSummaryFunction(doTotle) : {}
-    const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
-    const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
-    const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
-    combineResults(results, cnResults)
-    combineResults(results, chResults)
-    combineResults(results, faResults)
-    combineResults(results, ssResults)
-    combineResults(results, tlResults)
-    combineResults(results, lxResults)
-    combineResults(results, btResults)
-    combineResults(results, foxResults)
 
-    console.log('\n***** Change NOW Daily *****')
-    printTxDataMap('CHN', cnResults.daily)
-    console.log('\n***** Changelly Daily *****')
-    printTxDataMap('CHA', chResults.daily)
-    console.log('\n***** Faast Daily *****')
-    printTxDataMap('FAA', faResults.daily)
-    console.log('\n***** fox.exchange Daily *****')
-    printTxDataMap('FOX', foxResults.daily)
-    console.log('\n***** Shapeshift Daily *****')
-    printTxDataMap('SSH', ssResults.daily)
-    console.log('\n***** Shapeshift Monthly *****')
-    printTxDataMap('SSH', ssResults.monthly)
-    console.log('\n***** Changelly Monthly *****')
-    printTxDataMap('CHA', chResults.monthly)
-    console.log('\n***** Libertyx Monthly *****')
-    printTxDataMap('LBX', lxResults.monthly)
-    console.log('\n***** Libertyx Daily *****')
-    printTxDataMap('LBX', lxResults.daily)
-    console.log('\n***** Bitrefill Monthly *****')
-    printTxDataMap('BIT', btResults.monthly)
-    console.log('\n***** Bitrefill Daily *****')
-    printTxDataMap('BIT', btResults.daily)
-    console.log('\n***** Totle Daily *****')
-    printTxDataMap('TOT', tlResults.daily)
+    if (isConfigValidChangenow) {
+      const doResults = await doSummaryFunction(doChangenow)
+      combineResults(results, doResults)
+      console.log('\n***** Change NOW Daily *****')
+      printTxDataMap('CHN', doResults.daily)
+    } else {
+      printNotConfigured('CHA')
+    }
+
+    if (isConfigValidChangelly) {
+      const doResults = await doSummaryFunction(doChangelly)
+      combineResults(results, doResults)
+      console.log('\n***** Changelly Daily *****')
+      printTxDataMap('CHA', doResults.daily)
+      console.log('\n***** Changelly Monthly *****')
+      printTxDataMap('CHA', doResults.monthly)
+    } else {
+      printNotConfigured('CHA')
+    }
+
+    if (isConfigValidFaast) {
+      const doResults = await doSummaryFunction(doFaast)
+      combineResults(results, doResults)
+      console.log('\n***** Faast Daily *****')
+      printTxDataMap('FAA', doResults.daily)
+    } else {
+      printNotConfigured('FAA')
+    }
+
+    if (isConfigValidFox) {
+      const doResults = await doSummaryFunction(doFox)
+      combineResults(results, doResults)
+      console.log('\n***** fox.exchange Daily *****')
+      printTxDataMap('', doResults.daily)
+    } else {
+      printNotConfigured('FOX')
+    }
+
+    if (isConfigValidShapeShift) {
+      const doResults = await doSummaryFunction(doShapeShift)
+      combineResults(results, doResults)
+      console.log('\n***** Shapeshift Daily *****')
+      printTxDataMap('SSH', doResults.daily)
+      console.log('\n***** Shapeshift Monthly *****')
+      printTxDataMap('SSH', doResults.monthly)
+    } else {
+      printNotConfigured('SSH')
+    }
+
+    if (isConfigValidLibertyx) {
+      const doResults = await doSummaryFunction(doLibertyX)
+      combineResults(results, doResults)
+      console.log('\n***** Libertyx Monthly *****')
+      printTxDataMap('LBX', doResults.monthly)
+      console.log('\n***** Libertyx Daily *****')
+      printTxDataMap('LBX', doResults.daily)
+    } else {
+      printNotConfigured('LBX')
+    }
+
+    if (isConfigValidBitrefill) {
+      const doResults = await doSummaryFunction(doBitrefill)
+      combineResults(results, doResults)
+      console.log('\n***** Bitrefill Monthly *****')
+      printTxDataMap('BIT', doResults.monthly)
+      console.log('\n***** Bitrefill Daily *****')
+      printTxDataMap('BIT', doResults.daily)
+    } else {
+      printNotConfigured('BIT')
+    }
+
+    if (isConfigValidTotle) {
+      const doResults = await doSummaryFunction(doTotle)
+      combineResults(results, doResults)
+      console.log('\n***** Totle Daily *****')
+      printTxDataMap('TOT', doResults.daily)
+    } else {
+      printNotConfigured('TOT')
+    }
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -192,6 +233,10 @@ async function report (argv: Array<any>) {
   } else {
     await main(swapFuncParams)
   }
+}
+
+function printNotConfigured (svcName: string) {
+  console.log(`\n***** ${svcName} Not Configured *****`)
 }
 
 function printTxDataMap (prefix: string, txDataMap: TxDataMap) {

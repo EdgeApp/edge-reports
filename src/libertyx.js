@@ -9,6 +9,8 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const LIBERTYX_CACHE = './cache/libertyxRaw.json'
 
+const isConfigValid = (typeof config.libertyXApiKey !== 'undefined')
+
 async function doLibertyX (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchLibertyX,
     LIBERTYX_CACHE,
@@ -75,4 +77,4 @@ async function fetchLibertyX (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doLibertyX }
+module.exports = { doLibertyX, isConfigValid }

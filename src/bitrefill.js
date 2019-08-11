@@ -9,10 +9,19 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CACHE_FILE = './cache/brRaw.json'
 const MAX_ITERATIONS = 20
-const username = config.bitrefillCredentials.apiKey
-const password = config.bitrefillCredentials.apiSecret
-const headers = {
-  Authorization: 'Basic ' + Buffer.from(username + ':' + password).toString('base64')
+
+const isConfigValid = (typeof config.bitrefillCredentials !== 'undefined') &&
+                      (typeof config.bitrefillCredentials.apiKey !== 'undefined') &&
+                      (typeof config.bitrefillCredentials !== 'undefined') &&
+                      (typeof config.bitrefillCredentials.apiSecret !== 'undefined')
+
+let headers = {}
+if (isConfigValid) {
+  const username = config.bitrefillCredentials.apiKey
+  const password = config.bitrefillCredentials.apiSecret
+  headers = {
+    Authorization: 'Basic ' + Buffer.from(username + ':' + password).toString('base64')
+  }
 }
 
 async function doBitrefill (swapFuncParams: SwapFuncParams) {
@@ -107,4 +116,4 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doBitrefill }
+module.exports = { doBitrefill, isConfigValid }

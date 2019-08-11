@@ -152,7 +152,16 @@ async function checkSwapService (
 
   const { endDate } = swapFuncParams
   // diskCache is the [prefix]Raw.json file's transactions and an 'offset' property (that is persistent)
-  const { diskCache, newTransactions } = await theFetch(swapFuncParams)
+  let diskCache, newTransactions
+  try {
+    const response = await theFetch(swapFuncParams)
+    diskCache = response.diskCache
+    newTransactions = response.newTransactions
+  } catch (e) {
+    console.error(`checkSwapService failed for ${prefix}`)
+    return {}
+  }
+
   let cachedTransactions = diskCache.txs
 
   // Find duplicates
@@ -190,7 +199,11 @@ async function checkSwapService (
   diskCache.txs = cachedTransactions
   // write new list of tx to cache / disk
   const out = jsonFormat(diskCache, jsonConfig)
-  fs.writeFileSync(cacheFile, out)
+  try {
+    fs.writeFileSync(cacheFile, out)
+  } catch (e) {
+    console.error(`checkSwapService failed to write cache for ${prefix}`)
+  }
 
   const txDataMap: { [date: string]: TxData } = {}
   let amountTotal = '0'

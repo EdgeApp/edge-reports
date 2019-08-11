@@ -12,6 +12,8 @@ const { checkSwapService } = require('./checkSwapService.js')
 const FILE_CACHE = './cache/faastRaw.json'
 const PAGE_LIMIT = 50
 
+const isConfigValid = (typeof config.faastSecret !== 'undefined') && (typeof config.faastAffiliateId !== 'undefined')
+
 async function doFaast (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchFaast, FILE_CACHE, 'FA', swapFuncParams)
 }
@@ -87,4 +89,4 @@ async function fetchFaast (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doFaast }
+module.exports = { doFaast, isConfigValid }

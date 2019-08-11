@@ -8,6 +8,8 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CHANGENOW_CACHE = './cache/cnRaw.json'
 
+const isConfigValid = (typeof config.changenowApiKey !== 'undefined')
+
 async function doChangenow (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchChangenow,
     CHANGENOW_CACHE,
@@ -71,4 +73,4 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doChangenow }
+module.exports = { doChangenow, isConfigValid }

@@ -8,6 +8,11 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const FOX_CACHE = './cache/foxRaw.json'
 
+const isConfigValid = (typeof config.foxCredentials !== 'undefined') &&
+                      (typeof config.foxCredentials.apiKey !== 'undefined') &&
+                      (typeof config.foxCredentials !== 'undefined') &&
+                      (typeof config.foxCredentials.secretToken !== 'undefined')
+
 async function doFox (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchFox,
     FOX_CACHE,
@@ -90,4 +95,4 @@ async function fetchFox (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doFox }
+module.exports = { doFox, isConfigValid }

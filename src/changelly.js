@@ -8,10 +8,12 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CHANGELLY_CACHE = './cache/chRaw.json'
 
-const changelly = new Changelly(
+const isConfigValid = (typeof config.changellyApiKey !== 'undefined') && (typeof config.changellyApiSecret !== 'undefined')
+
+const changelly = isConfigValid ? new Changelly(
   config.changellyApiKey,
   config.changellyApiSecret
-)
+) : {}
 
 async function doChangelly (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchChangelly,
@@ -108,4 +110,4 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doChangelly }
+module.exports = { doChangelly, isConfigValid }
