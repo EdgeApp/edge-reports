@@ -8,7 +8,7 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CACHE_FILE = './cache/mnpRaw.json'
 const MAX_ITERATIONS = 20
-const LIMIT = 100
+const LIMIT = 50
 
 const isConfigValid = (typeof config.moonpayApiKey !== 'undefined')
 
@@ -41,13 +41,13 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
   let count = 0
   while (1 && !swapFuncParams.useCache) {
     const offset = count * LIMIT
-    const url = `https://api.moonpay.io/v2/transactions?limit=${LIMIT}&offset=${offset}`
+    const url = `https://api.moonpay.io/v1/transactions?limit=${LIMIT}&offset=${offset}`
     const result = await fetch(url, {
       method: 'GET',
       headers
     })
     const txs = await result.json()
-    console.log(`Moonpay: offset:${offset} count:${txs.length}`)
+    console.log(`Moonpay: offset:${offset} count:${txs.length} url:${url}`)
 
     for (const tx of txs) {
       if (tx.status === 'completed') {
@@ -55,23 +55,22 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
           status: 'complete',
           inputTXID: tx.cryptoTransactionId,
           inputAddress: '',
-          inputCurrency: tx.baseCurrencyId.toUpperCase(),
+          inputCurrency: tx.baseCurrencyId,
           inputAmount: tx.baseCurrencyAmount,
           outputAddress: tx.walletAddress,
-          outputCurrency: tx.currencyId.toUpperCase(),
+          outputCurrency: tx.currencyId,
           outputAmount: tx.quoteCurrencyAmount,
           timestamp: tx.createdAt
         }
         ssFormatTxs.push(ssTx)
       }
     }
-    if (count > MAX_ITERATIONS) {
-      // console.log('count > 9999')
+    if (count > MAX_ITERATIONS || count === 0) {
       break
     }
     count++
   }
-  // diskCache.offset = offset > 600 ? offset - 600 : offset
+
   const out = {
     diskCache,
     newTransactions: ssFormatTxs

@@ -159,6 +159,7 @@ async function checkSwapService (
     newTransactions = response.newTransactions
   } catch (e) {
     console.error(`checkSwapService failed for ${prefix}`)
+    console.error('error:', e)
     return {}
   }
 
