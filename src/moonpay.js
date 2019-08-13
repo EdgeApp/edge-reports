@@ -38,6 +38,10 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
 
   const ssFormatTxs: Array<StandardTx> = []
 
+  const currenciesUrl = 'https://api.moonpay.io/v2/currencies'
+  const currenciesResult = await fetch(currenciesUrl)
+  const currencies = await currenciesResult.json()
+
   let count = 0
   while (1 && !swapFuncParams.useCache) {
     const offset = count * LIMIT
@@ -51,18 +55,33 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
 
     for (const tx of txs) {
       if (tx.status === 'completed') {
-        const ssTx: StandardTx = {
-          status: 'complete',
-          inputTXID: tx.cryptoTransactionId,
-          inputAddress: '',
-          inputCurrency: tx.baseCurrencyId,
-          inputAmount: tx.baseCurrencyAmount,
-          outputAddress: tx.walletAddress,
-          outputCurrency: tx.currencyId,
-          outputAmount: tx.quoteCurrencyAmount,
-          timestamp: tx.createdAt
+        const baseCurrency = currencies.find(cur => cur.id === tx.baseCurrencyId)
+        const baseCurrencyCode = baseCurrency && baseCurrency.code && baseCurrency.code.toUpperCase()
+        const outputCurrency = currencies.find(cur => cur.id === tx.currencyId)
+        const outputCurrencyCode = outputCurrency && outputCurrency.code && outputCurrency.code.toUpperCase()
+        if (!baseCurrencyCode) {
+          console.warn(`baseCurrencyCode not defined for Moonpay tx ID: ${tx.id}`)
         }
-        ssFormatTxs.push(ssTx)
+        if (!outputCurrencyCode) {
+          console.warn(`outputCurrencyCode not defined for Moonpay tx ID: ${tx.id}`)
+        }
+        if (baseCurrencyCode && outputCurrencyCode) {
+          const date = new Date(tx.createdAt)
+          const timestamp = date.getTime() / 1000
+
+          const ssTx: StandardTx = {
+            status: 'complete',
+            inputTXID: tx.cryptoTransactionId,
+            inputAddress: '',
+            inputCurrency: baseCurrencyCode,
+            inputAmount: tx.baseCurrencyAmount,
+            outputAddress: tx.walletAddress,
+            outputCurrency: outputCurrencyCode,
+            outputAmount: tx.quoteCurrencyAmount,
+            timestamp
+          }
+          ssFormatTxs.push(ssTx)
+        }
       }
     }
     if (count > MAX_ITERATIONS || count === 0) {
