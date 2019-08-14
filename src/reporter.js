@@ -8,6 +8,7 @@ const { doBitrefill } = require('./bitrefill.js')
 const { doTotle } = require('./totle.js')
 const { doFox } = require('./fox.js')
 const { doFaast } = require('./faast.js')
+const { doCoinswitch } = require('./coinswitch.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
@@ -21,6 +22,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   const rBit = await doBitrefill(swapFuncParams)
   const rFox = await doFox(swapFuncParams)
   const rTl = await doTotle(swapFuncParams)
+  const rCs = await doCoinswitch(swapFuncParams)
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -29,6 +31,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('BIT', rBit)
   printTxDataMap('TOT', rTl)
   printTxDataMap('FOX', rFox)
+  printTxDataMap('CS', rCs)
   console.log(new Date(Date.now()))
 }
 
@@ -141,6 +144,7 @@ async function report (argv: Array<any>) {
     const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
     const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
     const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
+    const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -149,6 +153,7 @@ async function report (argv: Array<any>) {
     combineResults(results, lxResults)
     combineResults(results, btResults)
     combineResults(results, foxResults)
+    combineResults(results, csResults)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
@@ -186,6 +191,10 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTL', results.daily)
     console.log('\n***** Grand Totals Hourly *****')
     printTxDataMap('TTL', results.hourly)
+    console.log('\n***** CoinSwitch Daily *****')
+    printTxDataMap('CS', csResults.daily)
+    console.log('\n***** CoinSwitch Monthly *****')
+    printTxDataMap('CS', csResults.monthly)
     const d = new Date()
     console.log(d)
     console.log(d.toDateString() + ' ' + d.toTimeString())
