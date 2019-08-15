@@ -8,6 +8,7 @@ const { doBitrefill, isConfigValid: isConfigValidBitrefill } = require('./bitref
 const { doTotle, isConfigValid: isConfigValidTotle } = require('./totle.js')
 const { doFox, isConfigValid: isConfigValidFox } = require('./fox.js')
 const { doFaast, isConfigValid: isConfigValidFaast } = require('./faast.js')
+// TODO: const { doCoinswitch } = require('./coinswitch.js')
 const { doMoonpay, isConfigValid: isConfigValidMoonpay } = require('./moonpay.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
@@ -22,6 +23,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   await printDataOrError(swapFuncParams, doTotle, 'TOT', isConfigValidTotle)
   await printDataOrError(swapFuncParams, doFox, 'FOX', isConfigValidFox)
   await printDataOrError(swapFuncParams, doMoonpay, 'MNP', isConfigValidMoonpay)
+  // TODO: const rCs = await doCoinswitch(swapFuncParams)
   console.log(new Date(Date.now()))
 }
 
@@ -137,6 +139,8 @@ async function report (argv: Array<any>) {
   if (doSummary) {
     const results: { [string]: TxDataMap } = {}
 
+    // TODO: const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
+
     if (isConfigValidChangenow) {
       const doResults = await doSummaryFunction(doChangenow)
       combineResults(results, doResults)
@@ -238,6 +242,11 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTL', results.daily)
     console.log('\n***** Grand Totals Hourly *****')
     printTxDataMap('TTL', results.hourly)
+    // TODO:
+    // console.log('\n***** CoinSwitch Daily *****')
+    // printTxDataMap('CS', csResults.daily)
+    // console.log('\n***** CoinSwitch Monthly *****')
+    // printTxDataMap('CS', csResults.monthly)
     const d = new Date()
     console.log(d)
     console.log(d.toDateString() + ' ' + d.toTimeString())
