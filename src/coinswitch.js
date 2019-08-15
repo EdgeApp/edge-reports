@@ -8,6 +8,8 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const COINSWITCH_CACHE = './cache/csRaw.json'
 
+const isConfigValid = (typeof config.coinswitch !== 'undefined') && (typeof config.coinswitch.apiKey !== 'undefined')
+
 async function doCoinswitch (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchCoinswitch,
     COINSWITCH_CACHE,
@@ -71,4 +73,4 @@ async function fetchCoinswitch (swapFuncParams: SwapFuncParams) {
   return out
 }
 
-module.exports = { doCoinswitch }
+module.exports = { doCoinswitch, isConfigValid }

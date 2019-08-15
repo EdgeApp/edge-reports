@@ -8,7 +8,7 @@ const { doBitrefill, isConfigValid: isConfigValidBitrefill } = require('./bitref
 const { doTotle, isConfigValid: isConfigValidTotle } = require('./totle.js')
 const { doFox, isConfigValid: isConfigValidFox } = require('./fox.js')
 const { doFaast, isConfigValid: isConfigValidFaast } = require('./faast.js')
-// TODO: const { doCoinswitch } = require('./coinswitch.js')
+const { doCoinswitch, isConfigValid: isConfigValidCoinswitch } = require('./coinswitch.js')
 const { doMoonpay, isConfigValid: isConfigValidMoonpay } = require('./moonpay.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
@@ -23,7 +23,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   await printDataOrError(swapFuncParams, doTotle, 'TOT', isConfigValidTotle)
   await printDataOrError(swapFuncParams, doFox, 'FOX', isConfigValidFox)
   await printDataOrError(swapFuncParams, doMoonpay, 'MNP', isConfigValidMoonpay)
-  // TODO: const rCs = await doCoinswitch(swapFuncParams)
+  await printDataOrError(swapFuncParams, doCoinswitch, 'CS', isConfigValidCoinswitch)
   console.log(new Date(Date.now()))
 }
 
@@ -139,8 +139,6 @@ async function report (argv: Array<any>) {
   if (doSummary) {
     const results: { [string]: TxDataMap } = {}
 
-    // TODO: const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
-
     if (isConfigValidChangenow) {
       const doResults = await doSummaryFunction(doChangenow)
       combineResults(results, doResults)
@@ -222,6 +220,17 @@ async function report (argv: Array<any>) {
     }
 
     if (isConfigValidMoonpay) {
+      const doResults = await doSummaryFunction(doMoonpay)
+      combineResults(results, doResults)
+      console.log('\n***** Moonpay Daily *****')
+      printTxDataMap('', doResults.daily)
+    } else {
+      printNotConfigured('MNP')
+    }
+
+    // doCoinswitch, 'CS', isConfigValidCoinswitch)
+    // // TODO: const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
+    if (isConfigValidCoinswitch) {
       const doResults = await doSummaryFunction(doMoonpay)
       combineResults(results, doResults)
       console.log('\n***** Moonpay Daily *****')
