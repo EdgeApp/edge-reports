@@ -150,8 +150,6 @@ async function report (argv: Array<any>) {
     combineResults(results, faResults)
     combineResults(results, ssResults)
     combineResults(results, tlResults)
-    combineResults(results, lxResults)
-    combineResults(results, btResults)
     combineResults(results, foxResults)
     combineResults(results, csResults)
 
@@ -185,6 +183,9 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTS', results.daily)
     console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
+    combineResults(results, lxResults)
+    combineResults(results, btResults)
+
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
     console.log('\n***** Grand Totals Daily *****')
