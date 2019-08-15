@@ -84,7 +84,7 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
         }
       }
     }
-    if (count > MAX_ITERATIONS || count === 0) {
+    if (count > MAX_ITERATIONS || txs.length === 0) {
       break
     }
     count++
