@@ -52,11 +52,11 @@ async function main (swapFuncParams: SwapFuncParams) {
     console.error('doChangenow failed')
     return {}
   })
-  const rMnp = await doMoonpay(swapFuncParams).catch(e => {
-    console.error('doMoonpay failed')
+  const rGdx = await doGodex(swapFuncParams).catch(e => {
+    console.error('GoDex failed')
     return {}
   })
-  const rGdx = await doGodex(swapFuncParams).catch(e => {
+  const rMnp = await doMoonpay(swapFuncParams).catch(e => {
     console.error('doMoonpay failed')
     return {}
   })
@@ -241,36 +241,54 @@ async function report (argv: Array<any>) {
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
+    console.log('\n***** Change NOW monthly *****')
+    printTxDataMap('CHN', cnResults.monthly)
+
     console.log('\n***** Changelly Daily *****')
     printTxDataMap('CHA', chResults.daily)
+    console.log('\n***** Changelly Monthly *****')
+    printTxDataMap('CHA', chResults.monthly)
+
     console.log('\n***** Faast Daily *****')
     printTxDataMap('FAA', faResults.daily)
+    console.log('\n***** Faast Monthly *****')
+    printTxDataMap('FAA', faResults.monthly)
+
     console.log('\n***** fox.exchange Daily *****')
     printTxDataMap('FOX', foxResults.daily)
+    console.log('\n***** fox.exchange Monthly *****')
+    printTxDataMap('FOX', foxResults.monthly)
+
     console.log('\n***** Shapeshift Daily *****')
     printTxDataMap('SSH', ssResults.daily)
     console.log('\n***** Shapeshift Monthly *****')
     printTxDataMap('SSH', ssResults.monthly)
-    console.log('\n***** Changelly Monthly *****')
-    printTxDataMap('CHA', chResults.monthly)
-    console.log('\n***** Bitrefill Monthly *****')
-    printTxDataMap('BIT', btResults.monthly)
+
     console.log('\n***** Bitrefill Daily *****')
     printTxDataMap('BIT', btResults.daily)
+    console.log('\n***** Bitrefill Monthly *****')
+    printTxDataMap('BIT', btResults.monthly)
+
+    console.log('\n***** Coinswitch Daily *****')
+    printTxDataMap('CS', csResults.daily)
+    console.log('\n***** Coinswitch Monthly *****')
+    printTxDataMap('CS', csResults.monthly)
+
     console.log('\n***** Totle Daily *****')
     printTxDataMap('TOT', tlResults.daily)
-    console.log('\n***** CoinSwitch Daily *****')
-    printTxDataMap('CS', csResults.daily)
-    console.log('\n***** CoinSwitch Monthly *****')
-    printTxDataMap('CS', csResults.monthly)
-    console.log('\n***** Libertyx Monthly *****')
-    printTxDataMap('LBX', lxResults.monthly)
-    console.log('\n***** Libertyx Daily *****')
-    printTxDataMap('LBX', lxResults.daily)
+    console.log('\n***** Totle Monthly *****')
+    printTxDataMap('TOT', tlResults.monthly)
+
     console.log('\n***** GoDex Daily *****')
     printTxDataMap('GX', gxResults.daily)
     console.log('\n***** GoDex Monthly *****')
     printTxDataMap('GX', gxResults.monthly)
+
+    console.log('\n***** Libertyx Daily *****')
+    printTxDataMap('LBX', lxResults.daily)
+    console.log('\n***** Libertyx Monthly *****')
+    printTxDataMap('LBX', lxResults.monthly)
+
     console.log('\n***** Moonpay Monthly *****')
     printTxDataMap('MNP', mnpResults.monthly)
     console.log('\n***** Moonpay Daily *****')
