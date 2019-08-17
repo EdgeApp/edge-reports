@@ -37,6 +37,8 @@ export type SwapFuncParams = {
 }
 
 let _coincapResults
+let _exchangeratesapiResults
+let haveAttemptedExchangeRates = false
 
 const jsonConfig = {
   type: 'space',
@@ -427,6 +429,15 @@ async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
           break
         }
       }
+
+      // Try to get fiat rates
+      if (!fromToUsd) {
+        fromToUsd = await getFiatRate(from, 'USD')
+      }
+      if (!toToUsd) {
+        toToUsd = await getFiatRate(to, 'USD')
+      }
+
       // write ad-hoc rates to btcRates.json and return rates
       if (fromToUsd && toToUsd) {
         const rate = bns.div(fromToUsd, toToUsd, 8)
@@ -439,6 +450,50 @@ async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
       throw e
     }
   }
+}
+
+/*
+ * Finds the exchange rate from one fiat currency to another.
+ * Returns: String w/ float-value or undefined if either currency is not found
+ */
+async function getFiatRate (fromFiatCurrency: string, toFiatCurrency: string) {
+  await initExchangeRates()
+
+  const fromToBaseRate = findInExchangeRate(fromFiatCurrency)
+  const toToBaseRate = findInExchangeRate(toFiatCurrency)
+  if (fromToBaseRate && toToBaseRate) {
+    const rate = fromToBaseRate / toToBaseRate
+    return `${rate}` // cast float-->string
+  }
+
+  return undefined
+}
+
+async function initExchangeRates () {
+  if (!haveAttemptedExchangeRates) {
+    haveAttemptedExchangeRates = true
+    if (!_exchangeratesapiResults) {
+      const request = 'https://api.exchangeratesapi.io/latest'
+      const response = await fetch(request)
+      _exchangeratesapiResults = await response.json()
+    }
+  }
+}
+
+function findInExchangeRate (fiatCurrency: string) {
+  if (_exchangeratesapiResults && _exchangeratesapiResults.rates && _exchangeratesapiResults.base) {
+    if (fiatCurrency === _exchangeratesapiResults.base) {
+      return 1
+    }
+    for (const c of Object.keys(_exchangeratesapiResults.rates)) {
+      if (c.toUpperCase() === fiatCurrency.toUpperCase()) {
+        return _exchangeratesapiResults.rates[c]
+      }
+    }
+  } else {
+    console.warn('Missing or malformed _exchangeratesapiResults')
+  }
+  return undefined
 }
 
 // {
