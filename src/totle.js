@@ -265,6 +265,9 @@ async function doTotle (swapFuncParams: SwapFuncParams) {
 }
 
 async function fetchTotle (swapFuncParams: SwapFuncParams) {
+  if (!partnerContractAddress) {
+    return {}
+  }
   if (!swapFuncParams.useCache) {
     console.log('Fetching Totle...')
   }

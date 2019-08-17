@@ -9,8 +9,12 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CACHE_FILE = './cache/brRaw.json'
 const MAX_ITERATIONS = 20
-const username = config.bitrefillCredentials.apiKey
-const password = config.bitrefillCredentials.apiSecret
+let username = ''
+let password = ''
+if (config.bitrefillCredentials) {
+  username = config.bitrefillCredentials.apiKey
+  password = config.bitrefillCredentials.apiSecret
+}
 const headers = {
   Authorization: 'Basic ' + Buffer.from(username + ':' + password).toString('base64')
 }
