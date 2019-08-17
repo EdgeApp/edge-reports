@@ -9,6 +9,7 @@ const { doTotle } = require('./totle.js')
 const { doFox } = require('./fox.js')
 const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
+const { doMoonpay } = require('./moonpay.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
@@ -23,6 +24,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   const rFox = await doFox(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
   const rTl = await doTotle(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
   const rCs = await doCoinswitch(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
+  const rMnp = await doMoonpay(swapFuncParams).catch(e => { console.error('doMoonpay failed'); return {} })
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -32,6 +34,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('TOT', rTl)
   printTxDataMap('FOX', rFox)
   printTxDataMap('CS', rCs)
+  printTxDataMap('MNP', rMnp)
   console.log(new Date(Date.now()))
 }
 
@@ -145,6 +148,7 @@ async function report (argv: Array<any>) {
     const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
     const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
     const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
+    const mnpResults = config.coinswitch.apiKey ? await doSummaryFunction(doMoonpay) : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -152,6 +156,7 @@ async function report (argv: Array<any>) {
     combineResults(results, tlResults)
     combineResults(results, foxResults)
     combineResults(results, csResults)
+    combineResults(results, mnpResults)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
