@@ -145,10 +145,10 @@ async function report (argv: Array<any>) {
     const faResults = config.faastAffiliateId ? await doSummaryFunction(doFaast) : {}
     const tlResults = config.totleApiKey ? await doSummaryFunction(doTotle) : {}
     const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
-    const btResults = config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
+    const btResults = config.bitrefillCredentials && config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
     const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
-    const csResults = config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
-    const mnpResults = config.coinswitch.apiKey ? await doSummaryFunction(doMoonpay) : {}
+    const csResults = config.coinswitch && config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
+    const mnpResults = config.moonpayApiKey ? await doSummaryFunction(doMoonpay) : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
