@@ -15,16 +15,46 @@ const { bns } = require('biggystring')
 const config = require('../config.json')
 
 async function main (swapFuncParams: SwapFuncParams) {
-  const rChn = await doChangenow(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rCha = await doChangelly(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rFaa = await doFaast(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rSsh = await doShapeShift(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rLbx = await doLibertyX(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rBit = await doBitrefill(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rFox = await doFox(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rTl = await doTotle(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rCs = await doCoinswitch(swapFuncParams).catch(e => { console.error('doChangenow failed'); return {} })
-  const rMnp = await doMoonpay(swapFuncParams).catch(e => { console.error('doMoonpay failed'); return {} })
+  const rChn = await doChangenow(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rCha = await doChangelly(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rFaa = await doFaast(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rSsh = await doShapeShift(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rLbx = await doLibertyX(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rBit = await doBitrefill(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rFox = await doFox(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rTl = await doTotle(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rCs = await doCoinswitch(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rMnp = await doMoonpay(swapFuncParams).catch(e => {
+    console.error('doMoonpay failed')
+    return {}
+  })
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -48,7 +78,10 @@ function makeDate (endTime) {
   return `${y}-${m}-${d}`
 }
 
-function combineResults (r1: { [string]: TxDataMap }, r2: { [string]: TxDataMap }) {
+function combineResults (
+  r1: { [string]: TxDataMap },
+  r2: { [string]: TxDataMap }
+) {
   for (const freq in r2) {
     if (r2.hasOwnProperty(freq)) {
       if (!r1[freq]) {
@@ -76,7 +109,10 @@ function combineTxDataMap (r1: TxDataMap, r2: TxDataMap) {
       r1[date].amountUsd = bns.add(r1[date].amountUsd, r2[date].amountUsd)
       for (const cc in r2[date].currencyAmount) {
         if (r1[date].currencyAmount[cc]) {
-          r1[date].currencyAmount[cc] = bns.add(r1[date].currencyAmount[cc], r2[date].currencyAmount[cc])
+          r1[date].currencyAmount[cc] = bns.add(
+            r1[date].currencyAmount[cc],
+            r2[date].currencyAmount[cc]
+          )
         } else {
           r1[date].currencyAmount[cc] = r2[date].currencyAmount[cc]
         }
@@ -85,7 +121,9 @@ function combineTxDataMap (r1: TxDataMap, r2: TxDataMap) {
   }
 }
 
-async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap } {
+async function doSummaryFunction (
+  doFunction: Function
+): { [string]: TxDataMap } {
   // console.log(new Date(Date.now()))
   // console.log('**************************************************')
   // console.log('******* Monthly')
@@ -96,19 +134,23 @@ async function doSummaryFunction (doFunction: Function): { [string]: TxDataMap }
     hourly: {}
   }
 
-  out.monthly = await doFunction({useCache: false, interval: 'month', endDate: '2018-01'})
+  out.monthly = await doFunction({
+    useCache: false,
+    interval: 'month',
+    endDate: '2018-01'
+  })
 
   // console.log('**************************************************')
   let end = Date.now() - 1000 * 60 * 60 * 24 * 60 // 60 days back
   let endDate = makeDate(end)
   // console.log(`******* Daily until ${endDate}`)
-  out.daily = await doFunction({useCache: true, interval: 'day', endDate})
+  out.daily = await doFunction({ useCache: true, interval: 'day', endDate })
 
   // console.log('**************************************************')
   end = Date.now() - 1000 * 60 * 60 * 24 * 2 // 2 days back
   endDate = makeDate(end)
   // console.log(`******* Hourly until ${endDate}`)
-  out.hourly = await doFunction({useCache: true, interval: 'hour', endDate})
+  out.hourly = await doFunction({ useCache: true, interval: 'hour', endDate })
   return out
 }
 
@@ -118,14 +160,19 @@ async function report (argv: Array<any>) {
   console.log(d)
   console.log(d.toDateString() + ' ' + d.toTimeString())
 
-  const swapFuncParams: SwapFuncParams = {useCache: false, interval: 'month', endDate: '2018-01'}
+  const swapFuncParams: SwapFuncParams = {
+    useCache: false,
+    interval: 'month',
+    endDate: '2018-01'
+  }
   let doSummary = false
   for (const arg of argv) {
     if (arg === 'day' || arg === 'month' || arg === 'hour' || arg === 'mins') {
       swapFuncParams.interval = arg
     } else if (arg === 'cache') {
       swapFuncParams.useCache = true
-    } else if (arg === 'summary') { // most common parameter
+    } else if (arg === 'summary') {
+      // most common parameter
       doSummary = true
       break
     } else if (arg === 'nocache') {
@@ -139,16 +186,36 @@ async function report (argv: Array<any>) {
 
   if (doSummary) {
     const results: { [string]: TxDataMap } = {}
-    const cnResults = config.changenowApiKey ? await doSummaryFunction(doChangenow) : {}
-    const chResults = config.changellyApiKey ? await doSummaryFunction(doChangelly) : {}
-    const ssResults = config.shapeShiftApiKey ? await doSummaryFunction(doShapeShift) : {}
-    const faResults = config.faastAffiliateId ? await doSummaryFunction(doFaast) : {}
+    const cnResults = config.changenowApiKey
+      ? await doSummaryFunction(doChangenow)
+      : {}
+    const chResults = config.changellyApiKey
+      ? await doSummaryFunction(doChangelly)
+      : {}
+    const ssResults = config.shapeShiftApiKey
+      ? await doSummaryFunction(doShapeShift)
+      : {}
+    const faResults = config.faastAffiliateId
+      ? await doSummaryFunction(doFaast)
+      : {}
     const tlResults = config.totleApiKey ? await doSummaryFunction(doTotle) : {}
-    const lxResults = config.libertyXApiKey ? await doSummaryFunction(doLibertyX) : {}
-    const btResults = config.bitrefillCredentials && config.bitrefillCredentials.apiKey ? await doSummaryFunction(doBitrefill) : {}
-    const foxResults = config.foxCredentials ? await doSummaryFunction(doFox) : {}
-    const csResults = config.coinswitch && config.coinswitch.apiKey ? await doSummaryFunction(doCoinswitch) : {}
-    const mnpResults = config.moonpayApiKey ? await doSummaryFunction(doMoonpay) : {}
+    const lxResults = config.libertyXApiKey
+      ? await doSummaryFunction(doLibertyX)
+      : {}
+    const btResults =
+      config.bitrefillCredentials && config.bitrefillCredentials.apiKey
+        ? await doSummaryFunction(doBitrefill)
+        : {}
+    const foxResults = config.foxCredentials
+      ? await doSummaryFunction(doFox)
+      : {}
+    const csResults =
+      config.coinswitch && config.coinswitch.apiKey
+        ? await doSummaryFunction(doCoinswitch)
+        : {}
+    const mnpResults = config.moonpayApiKey
+      ? await doSummaryFunction(doMoonpay)
+      : {}
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -156,7 +223,6 @@ async function report (argv: Array<any>) {
     combineResults(results, tlResults)
     combineResults(results, foxResults)
     combineResults(results, csResults)
-    combineResults(results, mnpResults)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
@@ -172,16 +238,25 @@ async function report (argv: Array<any>) {
     printTxDataMap('SSH', ssResults.monthly)
     console.log('\n***** Changelly Monthly *****')
     printTxDataMap('CHA', chResults.monthly)
-    console.log('\n***** Libertyx Monthly *****')
-    printTxDataMap('LBX', lxResults.monthly)
-    console.log('\n***** Libertyx Daily *****')
-    printTxDataMap('LBX', lxResults.daily)
     console.log('\n***** Bitrefill Monthly *****')
     printTxDataMap('BIT', btResults.monthly)
     console.log('\n***** Bitrefill Daily *****')
     printTxDataMap('BIT', btResults.daily)
     console.log('\n***** Totle Daily *****')
     printTxDataMap('TOT', tlResults.daily)
+    console.log('\n***** CoinSwitch Daily *****')
+    printTxDataMap('CS', csResults.daily)
+    console.log('\n***** CoinSwitch Monthly *****')
+    printTxDataMap('CS', csResults.monthly)
+    console.log('\n***** Libertyx Monthly *****')
+    printTxDataMap('LBX', lxResults.monthly)
+    console.log('\n***** Libertyx Daily *****')
+    printTxDataMap('LBX', lxResults.daily)
+    console.log('\n***** Moonpay Monthly *****')
+    printTxDataMap('MNP', mnpResults.monthly)
+    console.log('\n***** Moonpay Daily *****')
+    printTxDataMap('MNP', mnpResults.daily)
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -190,6 +265,7 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTS', results.hourly)
     combineResults(results, lxResults)
     combineResults(results, btResults)
+    combineResults(results, mnpResults)
 
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
@@ -197,10 +273,6 @@ async function report (argv: Array<any>) {
     printTxDataMap('TTL', results.daily)
     console.log('\n***** Grand Totals Hourly *****')
     printTxDataMap('TTL', results.hourly)
-    console.log('\n***** CoinSwitch Daily *****')
-    printTxDataMap('CS', csResults.daily)
-    console.log('\n***** CoinSwitch Monthly *****')
-    printTxDataMap('CS', csResults.monthly)
     const d = new Date()
     console.log(d)
     console.log(d.toDateString() + ' ' + d.toTimeString())
