@@ -8,7 +8,7 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CACHE_FILE = './cache/mnpRaw.json'
 const MAX_ITERATIONS = 20
-const LIMIT = 50
+const PER_REQUEST_LIMIT = 50
 
 const isConfigValid = (typeof config.moonpayApiKey !== 'undefined')
 
@@ -44,8 +44,8 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
 
   let count = 0
   while (1 && !swapFuncParams.useCache) {
-    const offset = count * LIMIT
-    const url = `https://api.moonpay.io/v1/transactions?limit=${LIMIT}&offset=${offset}`
+    const offset = count * PER_REQUEST_LIMIT
+    const url = `https://api.moonpay.io/v1/transactions?limit=${PER_REQUEST_LIMIT}&offset=${offset}`
     const result = await fetch(url, {
       method: 'GET',
       headers
