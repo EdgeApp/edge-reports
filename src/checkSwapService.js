@@ -7,6 +7,8 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
+const coinApiExcludeLookup = config.coinApiExcludeLookup || []
+
 export type TxData = {
   txCount: number,
   // avgBtc: string,
@@ -67,29 +69,34 @@ function clearCache () {
 
 // only queries altcoin to USD
 async function queryCoinApi (currencyCode: string, date: string) {
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
-  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-  //   if (!doSummary) {
-  //     console.log(url)
-  //   }
-  // console.log('kylan fetched url is: ', url)
-  let response
-  try {
-    response = await fetch(url, {
-      method: 'GET'
-    })
-    const jsonObj = await response.json()
-    if (!jsonObj.rate) {
-      throw new Error('No rate from CoinAPI')
+  if (!coinApiExcludeLookup.find(currencyCode.toUpperCase)) {
+    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
+    const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
+    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
+    //   if (!doSummary) {
+    //     console.log(url)
+    //   }
+    // console.log('kylan fetched url is: ', url)
+    let response
+    try {
+      response = await fetch(url, {
+        method: 'GET'
+      })
+      const jsonObj = await response.json()
+      if (!jsonObj.rate) {
+        throw new Error('No rate from CoinAPI')
+      }
+      return jsonObj.rate.toString()
+    } catch (e) {
+      // if (!doSummary) {
+      console.log(e)
+      console.log(`${date} ${currencyCode}`)
+      // }
+      throw e
     }
-    return jsonObj.rate.toString()
-  } catch (e) {
-    // if (!doSummary) {
-    console.log(e)
-    console.log(`${date} ${currencyCode}`)
-    // }
-    throw e
+  } else {
+    console.log(`queryCoinApi excluding currencyCode ${currencyCode} from coinapi search`)
+    throw new Error('No rate from CoinAPI')
   }
 }
 
@@ -117,6 +124,7 @@ async function queryCoinMarketCap (currencyCode: string, date: string) {
     response = await fetch(url, fetchOptions)
     const jsonObj = await response.json()
     if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
+      console.log(`(1) No rate from CMC: ${currencyCode}`)
       throw new Error('No rate from CMC')
     }
     return jsonObj.data.quotes[0].quote.USD.price.toString()
