@@ -8,6 +8,7 @@ const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
 const coinApiExcludeLookup = config.coinApiExcludeLookup || []
+const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
 
 export type TxData = {
   txCount: number,
@@ -109,30 +110,35 @@ async function queryCoinApi (currencyCode: string, date: string) {
 
 // only queries altcoin to USD
 async function queryCoinMarketCap (currencyCode: string, date: string) {
-  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
+  if (!coinMarketCapExcludeLookup.find(currencyCode.toUpperCase)) {
+    const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
 
-  let response
-  const fetchOptions = {
-    method: 'GET',
-    headers: {
-      'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
-    },
-    json: true
-  }
-  // console.log('fetchOptions: ', fetchOptions)
-  try {
-    response = await fetch(url, fetchOptions)
-    const jsonObj = await response.json()
-    if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
-      console.log(`(1) No rate from CMC: ${currencyCode}`)
-      throw new Error('No rate from CMC')
+    let response
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
+      },
+      json: true
     }
-    return jsonObj.data.quotes[0].quote.USD.price.toString()
-  } catch (e) {
-    // if (!doSummary) {
-    console.log('No CoinMarketCap quote: ', e)
-    // }
-    throw e
+    // console.log('fetchOptions: ', fetchOptions)
+    try {
+      response = await fetch(url, fetchOptions)
+      const jsonObj = await response.json()
+      if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
+        console.log(`(1) No rate from CMC: ${currencyCode}`)
+        throw new Error('No rate from CMC')
+      }
+      return jsonObj.data.quotes[0].quote.USD.price.toString()
+    } catch (e) {
+      // if (!doSummary) {
+      console.log('No CoinMarketCap quote: ', e)
+      // }
+      throw e
+    }
+  } else {
+    console.log(`queryCoinMarketCap excluding currencyCode ${currencyCode} from coinapi search`)
+    throw new Error('No rate from CMC')
   }
 }
 
