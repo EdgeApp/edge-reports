@@ -46,10 +46,16 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
     // console.log(`Querying url ${url}`)
     // console.log(`Querying lastTxid ${lastTxid}`)
     // const limit = 100
-    const result = await fetch(url, {
-      method: 'GET',
-      headers
-    })
+    let result
+    try {
+      result = await fetch(url, {
+        method: 'GET',
+        headers
+      })
+    } catch (e) {
+      console.log('Bitrefill ERROR on fetch:', e)
+      return
+    }
     const jsonObj = await result.json()
     const txs = (jsonObj && jsonObj.orders && jsonObj.orders.length) ? jsonObj.orders : []
     // console.log(`Bitrefill: count:${count} count:${txs.length}`)
