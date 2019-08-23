@@ -69,30 +69,35 @@ function clearCache () {
 }
 
 // only queries altcoin to USD
-async function queryCoinApi (currencyCode: string, date: string) {
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
-  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-  //   if (!doSummary) {
-  //     console.log(url)
-  //   }
-  // console.log('kylan fetched url is: ', url)
-  let response
-  try {
-    response = await fetch(url, {
-      method: 'GET'
-    })
-    const jsonObj = await response.json()
-    if (!jsonObj.rate) {
-      return coinApiRateLookupError
+async function queryCoinApiForUsdRate (currencyCode: string, date: string, hasCoinApiRateLookupError: boolean) {
+  if (
+    config.coinApiKey &&
+    !hasCoinApiRateLookupError
+  ) {
+    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
+    const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
+    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
+    //   if (!doSummary) {
+    //     console.log(url)
+    //   }
+    // console.log('kylan fetched url is: ', url)
+    let response
+    try {
+      response = await fetch(url, {
+        method: 'GET'
+      })
+      const jsonObj = await response.json()
+      if (!jsonObj.rate) {
+        return coinApiRateLookupError
+      }
+      return jsonObj.rate.toString()
+    } catch (e) {
+      // if (!doSummary) {
+      console.log(e)
+      console.log(`${date} ${currencyCode}`)
+      // }
+      throw e
     }
-    return jsonObj.rate.toString()
-  } catch (e) {
-    // if (!doSummary) {
-    console.log(e)
-    console.log(`${date} ${currencyCode}`)
-    // }
-    throw e
   }
 }
 
@@ -104,8 +109,20 @@ async function queryCoinApi (currencyCode: string, date: string) {
 // }
 
 // only queries altcoin to USD
-async function queryCoinMarketCap (currencyCode: string, date: string) {
-  if (!coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())) {
+async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string) {
+  const currentTimestamp = Date.now()
+  const targetDate = new Date(date)
+  const targetTimestamp = targetDate.getTime()
+  // if less than 90 days old (cmc API restriction)
+  const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
+  const isApiKeyConfigured = config.coinMarketCapAPiKey
+  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
+
+  if (
+    soonerThan90Days &&
+    isApiKeyConfigured &&
+    !isCurrencyExcluded
+  ) {
     const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
 
     let response
@@ -116,19 +133,16 @@ async function queryCoinMarketCap (currencyCode: string, date: string) {
       },
       json: true
     }
-    // console.log('fetchOptions: ', fetchOptions)
+
     try {
       response = await fetch(url, fetchOptions)
       const jsonObj = await response.json()
       if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
-        console.log(`(1) No rate from CMC: ${currencyCode}`)
-        throw new Error('No rate from CMC')
+        throw new Error(`No rate from CMC: ${currencyCode}`)
       }
       return jsonObj.data.quotes[0].quote.USD.price.toString()
     } catch (e) {
-      // if (!doSummary) {
       console.log('No CoinMarketCap quote: ', e)
-      // }
       throw e
     }
   } else {
@@ -345,49 +359,129 @@ async function checkSwapService (
   return txDataMap
 }
 
-// gets specific USD rates for date from ratePairs.json
-async function getHistoricalUsdRate (currencyCode: string, date: string) {
-  // if the prices have NOT been loaded
+function queryRatePairs (currencyCode: string, date: string) {
   if (!ratesLoaded) {
     try {
-      // grab them from the persistent cache
       ratePairs = js.readFileSync('./cache/ratePairs.json')
     } catch (e) {
       console.log(e)
     }
   }
   ratesLoaded = true
-  if (ratePairs[date][currencyCode] === coinApiRateLookupError) {
-    return ''
+  return {
+    rate: ratePairs[date][currencyCode],
+    hasCoinApiRateLookupError: ratePairs[date][currencyCode] === coinApiRateLookupError
+  }
+}
+
+function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
+  ratePairs[date][currencyCode] = usdRate
+  js.writeFileSync('./cache/ratePairs.json', ratePairs)
+}
+
+async function getHistoricalUsdRate (currencyCode: string, date: string): Promise<string> {
+  // eslint-disable-next-line prefer-const
+  let {rate: usdRate, hasCoinApiRateLookupError} = queryRatePairs(currencyCode, date)
+  if (!usdRate) {
+    usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
+    if (!usdRate) {
+      usdRate = await queryCoinApiForUsdRate(currencyCode, date, hasCoinApiRateLookupError)
+    }
   }
 
-  let rate = ''
-  // if the currency has a pair for the date
-  if (ratePairs[date] && ratePairs[date][currencyCode]) {
-    rate = ratePairs[date][currencyCode]
-  } else {
-    // if the date does not exist or does not have a currency rate
-    if (!ratePairs[date]) {
-      ratePairs[date] = {} // initialize the date
-    }
-    const currentTimestamp = Date.now()
-    const targetDate = new Date(date)
-    const targetTimestamp = targetDate.getTime()
-    // if less than 90 days old (cmc API restriction)
-    if (config.coinMarketCapAPiKey && currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
-      rate = await queryCoinMarketCap(currencyCode, date)
-    }
-    if (!rate && config.coinApiKey) {
-      // only query coinApi if no rate loaded from cache or coinMarketCap
-      rate = await queryCoinApi(currencyCode, date)
-    }
-    if (rate) {
-      ratePairs[date][currencyCode] = rate
-      js.writeFileSync('./cache/ratePairs.json', ratePairs)
-    }
+  if (usdRate) {
+    updateRatePairs(currencyCode, date, usdRate)
   }
-  return rate
+
+  return 'usdRate'
 }
+
+// function queryBtcRates (currencyCode: string) {
+//   if (!btcRatesLoaded) {
+//     // check btcRates
+//     try {
+//       btcRates = js.readFileSync('./cache/btcRates.json')
+//     } catch (e) {
+//       console.log(e)
+//     }
+//     btcRatesLoaded = true
+//   }
+//
+//   const pair = `${currencyCode}_BTC`
+//   if (btcRates[pair]) {
+//     return btcRates[pair]
+//   }
+// }
+
+// function updateBtcRate (currencyCode: string) {
+//   const rate = bns.div(fromToUsd, toToUsd, 8)
+//   btcRates[pair] = rate
+//   js.writeFileSync('./cache/btcRates.json', btcRates)
+// }
+
+// async function queryCoinCap (currencyCode: string) {
+//   if (!_coincapResults) {
+//     const request = `https://api.coincap.io/v2/assets`
+//     const response = await fetch(request)
+//     _coincapResults = await response.json()
+//   }
+//
+//   if (_coincapResults.data) {
+//     return (_coincapResults.data.find(datum => datum.toUpperCase() === currencyCode) || {}).priceUsd
+//   }
+// }
+
+// async function getCurrentUsdRate (currencyCode: string) {
+//   let usdRate = await queryCoinCap(currencyCode)
+//   if (!usdRate) {
+//     usdRate = await getFiatRate(currencyCode, 'USD')
+//   }
+//   return usdRate || '0'
+// }
+
+// gets specific USD rates for date from ratePairs.json
+// async function getHistoricalUsdRate (currencyCode: string, date: string) {
+//   // if the prices have NOT been loaded
+//   if (!ratesLoaded) {
+//     try {
+//       // grab them from the persistent cache
+//       ratePairs = js.readFileSync('./cache/ratePairs.json')
+//     } catch (e) {
+//       console.log(e)
+//     }
+//   }
+//   ratesLoaded = true
+//   const hasCoinApiRateLookupError = ratePairs[date][currencyCode] === coinApiRateLookupError
+//
+//   let rate = ''
+//   // if the currency has a pair for the date
+//   if (ratePairs[date] && ratePairs[date][currencyCode]) {
+//     rate = ratePairs[date][currencyCode]
+//   } else {
+//     // if the date does not exist or does not have a currency rate
+//     if (!ratePairs[date]) {
+//       ratePairs[date] = {} // initialize the date
+//     }
+//     const currentTimestamp = Date.now()
+//     const targetDate = new Date(date)
+//     const targetTimestamp = targetDate.getTime()
+//     // if less than 90 days old (cmc API restriction)
+//     if (!hasCoinApiRateLookupError) {
+//       if (config.coinMarketCapAPiKey && currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
+//         rate = await queryCoinMarketCapForUsdRate(currencyCode, date)
+//       }
+//     }
+//     if (!rate && config.coinApiKey) {
+//       // only query coinApi if no rate loaded from cache or coinMarketCap
+//       rate = await queryCoinApiForUsdRate(currencyCode, date)
+//     }
+//     if (rate) {
+//       ratePairs[date][currencyCode] = rate
+//       js.writeFileSync('./cache/ratePairs.json', ratePairs)
+//     }
+//   }
+//   return rate
+// }
 
 // problematic routine, should be called "getHistoricalRate"?
 async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
