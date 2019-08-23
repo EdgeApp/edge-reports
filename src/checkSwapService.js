@@ -7,6 +7,9 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
+const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
+const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
+
 export type TxData = {
   txCount: number,
   // avgBtc: string,
@@ -81,7 +84,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
     })
     const jsonObj = await response.json()
     if (!jsonObj.rate) {
-      throw new Error('No rate from CoinAPI')
+      return coinApiRateLookupError
     }
     return jsonObj.rate.toString()
   } catch (e) {
@@ -102,29 +105,34 @@ async function queryCoinApi (currencyCode: string, date: string) {
 
 // only queries altcoin to USD
 async function queryCoinMarketCap (currencyCode: string, date: string) {
-  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
+  if (!coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())) {
+    const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
 
-  let response
-  const fetchOptions = {
-    method: 'GET',
-    headers: {
-      'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
-    },
-    json: true
-  }
-  // console.log('fetchOptions: ', fetchOptions)
-  try {
-    response = await fetch(url, fetchOptions)
-    const jsonObj = await response.json()
-    if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
-      throw new Error('No rate from CMC')
+    let response
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
+      },
+      json: true
     }
-    return jsonObj.data.quotes[0].quote.USD.price.toString()
-  } catch (e) {
-    // if (!doSummary) {
-    console.log('No CoinMarketCap quote: ', e)
-    // }
-    throw e
+    // console.log('fetchOptions: ', fetchOptions)
+    try {
+      response = await fetch(url, fetchOptions)
+      const jsonObj = await response.json()
+      if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
+        console.log(`(1) No rate from CMC: ${currencyCode}`)
+        throw new Error('No rate from CMC')
+      }
+      return jsonObj.data.quotes[0].quote.USD.price.toString()
+    } catch (e) {
+      // if (!doSummary) {
+      console.log('No CoinMarketCap quote: ', e)
+      // }
+      throw e
+    }
+  } else {
+    throw new Error('No rate from CMC')
   }
 }
 
@@ -366,7 +374,7 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     if (config.coinMarketCapAPiKey && currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
       rate = await queryCoinMarketCap(currencyCode, date)
     }
-    if (!rate && config.coinApiKey) {
+    if (!rate && config.coinApiKey && ratePairs[date][currencyCode] !== coinApiRateLookupError) {
       // only query coinApi if no rate loaded from cache or coinMarketCap
       rate = await queryCoinApi(currencyCode, date)
     }
