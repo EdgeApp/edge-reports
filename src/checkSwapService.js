@@ -73,13 +73,7 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string, hasCo
     config.coinApiKey &&
     !hasCoinApiRateLookupError
   ) {
-    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
     const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-    //   if (!doSummary) {
-    //     console.log(url)
-    //   }
-    // console.log('kylan fetched url is: ', url)
     let response
     try {
       response = await fetch(url, {
@@ -148,22 +142,6 @@ async function checkSwapService (
   swapFuncParams: SwapFuncParams
 ) {
   clearCache()
-  // const diskCache = js.readFileSync(cacheFile)
-  // const cachedTransactions = diskCache.txs
-  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
-  // let newTransactions = []
-  // if (!useCache) {
-  //   while (newTransactions.length === 0) {
-  //     try {
-  //       const newQuery = await theFetch()
-  //       newTransactions = newQuery.txs
-  //       console.log(`Got new transactions... ${newTransactions.length}`)
-  //     } catch (e) {
-  //       console.log(e)
-  //       return
-  //     }
-  //   }
-  // }
 
   const { endDate } = swapFuncParams
   // diskCache is the [prefix]Raw.json file's transactions and an 'offset' property (that is persistent)
@@ -222,6 +200,7 @@ async function checkSwapService (
     const day = pad(date.getUTCDate(), 2)
     const hour = pad(date.getUTCHours(), 2)
     const mins = pad(date.getUTCMinutes(), 2)
+    const dateStr = `${year.toString()}-${month}-${day}`
 
     let idx
     const { interval } = swapFuncParams
@@ -276,6 +255,8 @@ async function checkSwapService (
       if (tx.inputCurrency === 'BTC') {
         amountBtc = tx.inputAmount.toString()
       } else {
+        getUsdRate(tx.inputCurrency, dateStr)
+        getUsdRate('BTC', dateStr)
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
         // will try grabbing from cache and then query coincap.io if nothing cached
@@ -370,6 +351,14 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
   js.writeFileSync('./cache/ratePairs.json', ratePairs)
 }
 
+async function getUsdRate (currencyCode: string, date: string) {
+  let usdRate = getHistoricalUsdRate(currencyCode, date)
+  if (!usdRate) {
+    usdRate = getCurrentUsdRate(currencyCode)
+  }
+  return usdRate
+}
+
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
   // eslint-disable-next-line prefer-const
   let {rate: usdRate, hasCoinApiRateLookupError} = queryRatePairs(currencyCode, date)
@@ -403,32 +392,32 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
 //     return btcRates[pair]
 //   }
 // }
-
+//
 // function updateBtcRate (currencyCode: string) {
 //   const rate = bns.div(fromToUsd, toToUsd, 8)
 //   btcRates[pair] = rate
 //   js.writeFileSync('./cache/btcRates.json', btcRates)
 // }
 
-// async function queryCoinCap (currencyCode: string) {
-//   if (!_coincapResults) {
-//     const request = `https://api.coincap.io/v2/assets`
-//     const response = await fetch(request)
-//     _coincapResults = await response.json()
-//   }
-//
-//   if (_coincapResults.data) {
-//     return (_coincapResults.data.find(datum => datum.toUpperCase() === currencyCode) || {}).priceUsd
-//   }
-// }
+async function queryCoinCap (currencyCode: string) {
+  if (!_coincapResults) {
+    const request = `https://api.coincap.io/v2/assets`
+    const response = await fetch(request)
+    _coincapResults = await response.json()
+  }
 
-// async function getCurrentUsdRate (currencyCode: string) {
-//   let usdRate = await queryCoinCap(currencyCode)
-//   if (!usdRate) {
-//     usdRate = await getFiatRate(currencyCode, 'USD')
-//   }
-//   return usdRate || '0'
-// }
+  if (_coincapResults.data) {
+    return (_coincapResults.data.find(datum => datum.toUpperCase() === currencyCode) || {}).priceUsd
+  }
+}
+
+async function getCurrentUsdRate (currencyCode: string) {
+  let usdRate = await queryCoinCap(currencyCode)
+  if (!usdRate) {
+    usdRate = await getFiatRate(currencyCode, 'USD')
+  }
+  return usdRate || '0'
+}
 
 // problematic routine, should be called "getHistoricalRate"?
 async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
