@@ -7,7 +7,6 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
-const coinApiExcludeLookup = config.coinApiExcludeLookup || []
 const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
 
 export type TxData = {
@@ -70,34 +69,29 @@ function clearCache () {
 
 // only queries altcoin to USD
 async function queryCoinApi (currencyCode: string, date: string) {
-  if (!coinApiExcludeLookup.find(currencyCode.toUpperCase)) {
-    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
-    const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-    // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-    //   if (!doSummary) {
-    //     console.log(url)
-    //   }
-    // console.log('kylan fetched url is: ', url)
-    let response
-    try {
-      response = await fetch(url, {
-        method: 'GET'
-      })
-      const jsonObj = await response.json()
-      if (!jsonObj.rate) {
-        throw new Error('No rate from CoinAPI')
-      }
-      return jsonObj.rate.toString()
-    } catch (e) {
-      // if (!doSummary) {
-      console.log(e)
-      console.log(`${date} ${currencyCode}`)
-      // }
-      throw e
+  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
+  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
+  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
+  //   if (!doSummary) {
+  //     console.log(url)
+  //   }
+  // console.log('kylan fetched url is: ', url)
+  let response
+  try {
+    response = await fetch(url, {
+      method: 'GET'
+    })
+    const jsonObj = await response.json()
+    if (!jsonObj.rate) {
+      throw new Error('No rate from CoinAPI')
     }
-  } else {
-    console.log(`queryCoinApi excluding currencyCode ${currencyCode} from coinapi search`)
-    throw new Error('No rate from CoinAPI')
+    return jsonObj.rate.toString()
+  } catch (e) {
+    // if (!doSummary) {
+    console.log(e)
+    console.log(`${date} ${currencyCode}`)
+    // }
+    throw e
   }
 }
 
@@ -110,7 +104,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
 
 // only queries altcoin to USD
 async function queryCoinMarketCap (currencyCode: string, date: string) {
-  if (!coinMarketCapExcludeLookup.find(currencyCode.toUpperCase)) {
+  if (!coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())) {
     const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
 
     let response
