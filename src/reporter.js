@@ -20,31 +20,31 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
   const rCha = await doChangelly(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doChangelly failed')
     return {}
   })
   const rFaa = await doFaast(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doFaast failed')
     return {}
   })
   const rSsh = await doShapeShift(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doShapeShift failed')
     return {}
   })
   const rLbx = await doLibertyX(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doLibertyX failed')
     return {}
   })
   const rBit = await doBitrefill(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doBitrefill failed')
     return {}
   })
   const rFox = await doFox(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doFox failed')
     return {}
   })
   const rTl = await doTotle(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doTotle failed')
     return {}
   })
   const rCs = await doCoinswitch(swapFuncParams).catch(e => {
