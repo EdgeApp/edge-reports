@@ -8,6 +8,7 @@ const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
 const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
+const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
 
 export type TxData = {
   txCount: number,
@@ -83,7 +84,7 @@ async function queryCoinApi (currencyCode: string, date: string) {
     })
     const jsonObj = await response.json()
     if (!jsonObj.rate) {
-      throw new Error('No rate from CoinAPI')
+      return coinApiRateLookupError
     }
     return jsonObj.rate.toString()
   } catch (e) {
@@ -357,6 +358,9 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     }
   }
   ratesLoaded = true
+  if (ratePairs[date][currencyCode] === coinApiRateLookupError) {
+    return ''
+  }
 
   let rate = ''
   // if the currency has a pair for the date
