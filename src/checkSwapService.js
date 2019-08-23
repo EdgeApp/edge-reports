@@ -357,9 +357,6 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     }
   }
   ratesLoaded = true
-  if (ratePairs[date][currencyCode] === coinApiRateLookupError) {
-    return ''
-  }
 
   let rate = ''
   // if the currency has a pair for the date
@@ -377,7 +374,7 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     if (config.coinMarketCapAPiKey && currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
       rate = await queryCoinMarketCap(currencyCode, date)
     }
-    if (!rate && config.coinApiKey) {
+    if (!rate && config.coinApiKey && ratePairs[date][currencyCode] !== coinApiRateLookupError) {
       // only query coinApi if no rate loaded from cache or coinMarketCap
       rate = await queryCoinApi(currencyCode, date)
     }
