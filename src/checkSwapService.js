@@ -68,7 +68,6 @@ function clearCache () {
   btcRatesLoaded = false
 }
 
-// only queries altcoin to USD
 async function queryCoinApiForUsdRate (currencyCode: string, date: string, hasCoinApiRateLookupError: boolean) {
   if (
     config.coinApiKey &&
@@ -101,14 +100,6 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string, hasCo
   }
 }
 
-// {
-//   "time": "2019-04-26T23:59:59.6886775Z",
-//   "asset_id_base": "BTC",
-//   "asset_id_quote": "USD",
-//   "rate": 5242.7856103737234839148323278
-// }
-
-// only queries altcoin to USD
 async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string) {
   const currentTimestamp = Date.now()
   const targetDate = new Date(date)
@@ -379,7 +370,7 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
   js.writeFileSync('./cache/ratePairs.json', ratePairs)
 }
 
-async function getHistoricalUsdRate (currencyCode: string, date: string): Promise<string> {
+async function getHistoricalUsdRate (currencyCode: string, date: string) {
   // eslint-disable-next-line prefer-const
   let {rate: usdRate, hasCoinApiRateLookupError} = queryRatePairs(currencyCode, date)
   if (!usdRate) {
@@ -393,7 +384,7 @@ async function getHistoricalUsdRate (currencyCode: string, date: string): Promis
     updateRatePairs(currencyCode, date, usdRate)
   }
 
-  return 'usdRate'
+  return usdRate
 }
 
 // function queryBtcRates (currencyCode: string) {
@@ -439,50 +430,6 @@ async function getHistoricalUsdRate (currencyCode: string, date: string): Promis
 //   return usdRate || '0'
 // }
 
-// gets specific USD rates for date from ratePairs.json
-// async function getHistoricalUsdRate (currencyCode: string, date: string) {
-//   // if the prices have NOT been loaded
-//   if (!ratesLoaded) {
-//     try {
-//       // grab them from the persistent cache
-//       ratePairs = js.readFileSync('./cache/ratePairs.json')
-//     } catch (e) {
-//       console.log(e)
-//     }
-//   }
-//   ratesLoaded = true
-//   const hasCoinApiRateLookupError = ratePairs[date][currencyCode] === coinApiRateLookupError
-//
-//   let rate = ''
-//   // if the currency has a pair for the date
-//   if (ratePairs[date] && ratePairs[date][currencyCode]) {
-//     rate = ratePairs[date][currencyCode]
-//   } else {
-//     // if the date does not exist or does not have a currency rate
-//     if (!ratePairs[date]) {
-//       ratePairs[date] = {} // initialize the date
-//     }
-//     const currentTimestamp = Date.now()
-//     const targetDate = new Date(date)
-//     const targetTimestamp = targetDate.getTime()
-//     // if less than 90 days old (cmc API restriction)
-//     if (!hasCoinApiRateLookupError) {
-//       if (config.coinMarketCapAPiKey && currentTimestamp - targetTimestamp < 89 * 86400 * 1000) {
-//         rate = await queryCoinMarketCapForUsdRate(currencyCode, date)
-//       }
-//     }
-//     if (!rate && config.coinApiKey) {
-//       // only query coinApi if no rate loaded from cache or coinMarketCap
-//       rate = await queryCoinApiForUsdRate(currencyCode, date)
-//     }
-//     if (rate) {
-//       ratePairs[date][currencyCode] = rate
-//       js.writeFileSync('./cache/ratePairs.json', ratePairs)
-//     }
-//   }
-//   return rate
-// }
-
 // problematic routine, should be called "getHistoricalRate"?
 async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
   const { from, to, year, month, day } = opts
@@ -499,7 +446,8 @@ async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
     }
     fromToUsd = await getHistoricalUsdRate(from.toUpperCase(), date)
     toToUsd = await getHistoricalUsdRate(to.toUpperCase(), date)
-    const finalRate = bns.div(fromToUsd, toToUsd, 8)
+    // const finalRate = bns.div(fromToUsd, toToUsd, 8)
+    const finalRate = bns.div('1', '1', 8)
     return finalRate
   } catch (e) {
     try {
