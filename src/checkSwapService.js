@@ -132,7 +132,6 @@ async function queryCoinMarketCap (currencyCode: string, date: string) {
       throw e
     }
   } else {
-    console.log(`queryCoinMarketCap excluding currencyCode ${currencyCode} from coinapi search`)
     throw new Error('No rate from CMC')
   }
 }
