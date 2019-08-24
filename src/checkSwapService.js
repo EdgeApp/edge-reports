@@ -69,8 +69,18 @@ function clearCache () {
 }
 
 async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
+  const currentTimestamp = Date.now()
+  const targetDate = new Date(date)
+  const targetTimestamp = targetDate.getTime()
+  // if less than 90 days old (cmc API restriction) <<== Is this true for CoinApi?
+  const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
+  const isApiKeyConfigured = config.coinApiKey
   const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
-  if (config.coinApiKey && !isCurrencyExcluded) {
+  if (
+    soonerThan90Days &&
+    isApiKeyConfigured &&
+    !isCurrencyExcluded
+  ) {
     const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
     try {
       const response = await fetch(url, {
