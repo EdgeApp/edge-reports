@@ -321,9 +321,14 @@ function queryRatePairs (currencyCode: string, date: string) {
 }
 
 function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
-  ratePairs[date] = ratePairs[date] || {}
-  ratePairs[date][currencyCode] = usdRate
-  js.writeFileSync('./cache/ratePairs.json', ratePairs)
+  if (!ratePairs[date]) {
+    ratePairs[date] = {}
+  }
+
+  if (!ratePairs[date][currencyCode]) {
+    ratePairs[date][currencyCode] = usdRate
+    js.writeFileSync('./cache/ratePairs.json', ratePairs)
+  }
 }
 
 async function getUsdRate (currencyCode: string, date: string, includeBtcRates: boolean) {
@@ -377,8 +382,10 @@ function queryBtcRates (currencyCode: string) {
 
 function updateBtcRate (currencyCode: string, rate: string) {
   const pair = `${currencyCode}_BTC`
-  btcRates[pair] = rate
-  js.writeFileSync('./cache/btcRates.json', btcRates)
+  if (!btcRates[pair]) {
+    btcRates[pair] = rate
+    js.writeFileSync('./cache/btcRates.json', btcRates)
+  }
 }
 
 async function queryCoinCap (currencyCode: string) {
