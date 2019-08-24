@@ -91,6 +91,8 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string, hasCo
       // }
       throw e
     }
+  } else {
+    return ''
   }
 }
 
@@ -255,8 +257,9 @@ async function checkSwapService (
       if (tx.inputCurrency === 'BTC') {
         amountBtc = tx.inputAmount.toString()
       } else {
-        getUsdRate(tx.inputCurrency, dateStr)
-        getUsdRate('BTC', dateStr)
+        const a = await getUsdRate(tx.inputCurrency, dateStr)
+        const b = await getUsdRate('BTC', dateStr)
+        bns.mul(a, b)
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
         // will try grabbing from cache and then query coincap.io if nothing cached
@@ -337,6 +340,7 @@ function queryRatePairs (currencyCode: string, date: string) {
       ratePairs = js.readFileSync('./cache/ratePairs.json')
     } catch (e) {
       console.log(e)
+      return {rate: '', hasCoinApiRateLookupError: false}
     }
   }
   ratesLoaded = true
@@ -352,9 +356,9 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
 }
 
 async function getUsdRate (currencyCode: string, date: string) {
-  let usdRate = getHistoricalUsdRate(currencyCode, date)
-  if (!usdRate) {
-    usdRate = getCurrentUsdRate(currencyCode)
+  let usdRate = await getHistoricalUsdRate(currencyCode, date)
+  if (!usdRate || usdRate === '') {
+    usdRate = await getCurrentUsdRate(currencyCode)
   }
   return usdRate
 }
@@ -362,14 +366,14 @@ async function getUsdRate (currencyCode: string, date: string) {
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
   // eslint-disable-next-line prefer-const
   let {rate: usdRate, hasCoinApiRateLookupError} = queryRatePairs(currencyCode, date)
-  if (!usdRate) {
+  if (!usdRate || usdRate === '') {
     usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
-    if (!usdRate) {
+    if (!usdRate || usdRate === '') {
       usdRate = await queryCoinApiForUsdRate(currencyCode, date, hasCoinApiRateLookupError)
     }
   }
 
-  if (usdRate) {
+  if (usdRate && usdRate !== '') {
     updateRatePairs(currencyCode, date, usdRate)
   }
 
@@ -408,15 +412,22 @@ async function queryCoinCap (currencyCode: string) {
 
   if (_coincapResults.data) {
     return (_coincapResults.data.find(datum => datum.toUpperCase() === currencyCode) || {}).priceUsd
+  } else {
+    return ''
   }
 }
 
 async function getCurrentUsdRate (currencyCode: string) {
   let usdRate = await queryCoinCap(currencyCode)
-  if (!usdRate) {
+  if (!usdRate || usdRate === '') {
     usdRate = await getFiatRate(currencyCode, 'USD')
   }
-  return usdRate || '0'
+
+  if (!usdRate || usdRate === '') {
+    return '0'
+  } else {
+    return usdRate
+  }
 }
 
 // problematic routine, should be called "getHistoricalRate"?
@@ -508,7 +519,7 @@ async function getFiatRate (fromFiatCurrency: string, toFiatCurrency: string) {
     return `${rate}` // cast float-->string
   }
 
-  return undefined
+  return ''
 }
 
 async function initExchangeRates () {
