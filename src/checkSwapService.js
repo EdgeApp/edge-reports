@@ -68,28 +68,26 @@ function clearCache () {
   // btcRatesLoaded = false
 }
 
-async function queryCoinApiForUsdRate (currencyCode: string, date: string, hasCoinApiRateLookupError: boolean) {
-  if (
-    config.coinApiKey &&
-    !hasCoinApiRateLookupError
-  ) {
+async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
+  if (config.coinApiKey) {
     const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-    let response
     try {
-      response = await fetch(url, {
+      const response = await fetch(url, {
         method: 'GET'
       })
-      const jsonObj = await response.json()
-      if (!jsonObj.rate) {
-        return coinApiRateLookupError
+      if (response.status === 200) {
+        const jsonObj = await response.json()
+        if (!jsonObj.rate) {
+          return coinApiRateLookupError
+        }
+        return jsonObj.rate.toString()
+      } else {
+        return ''
       }
-      return jsonObj.rate.toString()
     } catch (e) {
-      // if (!doSummary) {
       console.log(e)
       console.log(`${date} ${currencyCode}`)
-      // }
-      throw e
+      return ''
     }
   } else {
     return ''
@@ -262,7 +260,7 @@ async function checkSwapService (
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
         const txInputCurToUsdRate = await getUsdRate(tx.inputCurrency, dateStr)
-        if (txInputCurToUsdRate !== coinApiRateLookupError) {
+        if (txInputCurToUsdRate !== coinApiRateLookupError && txInputCurToUsdRate !== '0') {
           const btcToTxInputCurRate = bns.div(btcToUsdRate, txInputCurToUsdRate, 8)
           amountBtc = bns.mul(btcToTxInputCurRate, tx.inputAmount.toString())
         }
@@ -311,17 +309,19 @@ function queryRatePairs (currencyCode: string, date: string) {
       ratePairs = js.readFileSync('./cache/ratePairs.json')
     } catch (e) {
       console.log(e)
-      return {rate: '', hasCoinApiRateLookupError: false}
+      return ''
     }
   }
   ratesLoaded = true
-  return {
-    rate: ratePairs[date][currencyCode],
-    hasCoinApiRateLookupError: ratePairs[date][currencyCode] === coinApiRateLookupError
+  if (ratePairs[date]) {
+    return ratePairs[date][currencyCode]
+  } else {
+    return ''
   }
 }
 
 function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
+  ratePairs[date] = ratePairs[date] || {}
   ratePairs[date][currencyCode] = usdRate
   js.writeFileSync('./cache/ratePairs.json', ratePairs)
 }
@@ -335,20 +335,27 @@ async function getUsdRate (currencyCode: string, date: string) {
 }
 
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
-  // eslint-disable-next-line prefer-const
-  let {rate: usdRate, hasCoinApiRateLookupError} = queryRatePairs(currencyCode, date)
-  if (!usdRate || usdRate === '') {
-    usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
+  let usdRate = queryRatePairs(currencyCode, date)
+  if (usdRate !== coinApiRateLookupError) {
     if (!usdRate || usdRate === '') {
-      usdRate = await queryCoinApiForUsdRate(currencyCode, date, hasCoinApiRateLookupError)
+      usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
+      if (!usdRate || usdRate === '') {
+        usdRate = await queryCoinApiForUsdRate(currencyCode, date)
+      }
     }
-  }
 
-  if (usdRate && usdRate !== '') {
-    updateRatePairs(currencyCode, date, usdRate)
-  }
+    if (usdRate && usdRate !== '') {
+      updateRatePairs(currencyCode, date, usdRate)
+    } else {
+      // If currencyCode & date pair are NOT found in either CoinMarketCap nor CoinApi then
+      //  mark it as being in 'error' in the ratePairs cache structure
+      updateRatePairs(currencyCode, date, coinApiRateLookupError)
+    }
 
-  return usdRate
+    return usdRate
+  } else {
+    return '0'
+  }
 }
 
 // function queryBtcRates (currencyCode: string) {
@@ -382,7 +389,7 @@ async function queryCoinCap (currencyCode: string) {
   }
 
   if (_coincapResults.data) {
-    return (_coincapResults.data.find(datum => datum.toUpperCase() === currencyCode) || {}).priceUsd
+    return (_coincapResults.data.find(datum => datum.symbol.toUpperCase() === currencyCode) || {}).priceUsd
   } else {
     return ''
   }
