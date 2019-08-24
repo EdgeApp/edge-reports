@@ -69,7 +69,8 @@ function clearCache () {
 }
 
 async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
-  if (config.coinApiKey) {
+  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
+  if (config.coinApiKey && !isCurrencyExcluded) {
     const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
     try {
       const response = await fetch(url, {
@@ -265,7 +266,7 @@ async function checkSwapService (
           amountBtc = bns.mul(btcToTxInputCurRate, tx.inputAmount.toString())
         }
       }
-      if (btcToUsdRate) {
+      if (btcToUsdRate && btcToUsdRate !== '0') {
         amountUsd = bns.div(amountBtc, btcToUsdRate, 8)
       } else {
         console.log('Unable to calculate ANY fiat value for: ', tx.inputCurrency)
@@ -332,6 +333,9 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
 }
 
 async function getUsdRate (currencyCode: string, date: string, includeBtcRates: boolean) {
+  if (currencyCode === 'USD') {
+    return '1'
+  }
   let usdRate = await getHistoricalUsdRate(currencyCode, date)
   if (!usdRate || usdRate === '') {
     usdRate = await getCurrentUsdRate(currencyCode, includeBtcRates)
@@ -359,7 +363,7 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
 
     return usdRate
   } else {
-    return '0'
+    return ''
   }
 }
 
