@@ -263,6 +263,8 @@ async function checkSwapService (
       amountUsd = tx.outputAmount
     } else {
       const btcToUsdRate = await getUsdRate('BTC', dateStr)
+      const txInputToUsdRate = await getUsdRate(tx.inputCurrency, dateStr)
+      amountUsd = bns.div(tx.inputAmount.toString(), txInputToUsdRate, 8)
 
       // most partners
       if (tx.inputCurrency === 'BTC') {
@@ -274,9 +276,8 @@ async function checkSwapService (
         let btcToTxInputCurRate = queryBtcRates(tx.inputCurrency)
         if (!btcToTxInputCurRate) {
           // If it's not cached yet then we'll have to generate it the long way...
-          const txInputCurToUsdRate = await getUsdRate(tx.inputCurrency, dateStr)
-          if (txInputCurToUsdRate !== coinApiRateLookupError && txInputCurToUsdRate !== '0') {
-            btcToTxInputCurRate = bns.div(btcToUsdRate, txInputCurToUsdRate, 8)
+          if (txInputToUsdRate !== coinApiRateLookupError && txInputToUsdRate !== '0') {
+            btcToTxInputCurRate = bns.div(btcToUsdRate, txInputToUsdRate, 8)
           }
           // And update the cache...
           if (btcToTxInputCurRate && btcToTxInputCurRate !== '') {
@@ -284,11 +285,6 @@ async function checkSwapService (
           }
         }
         amountBtc = bns.mul(btcToTxInputCurRate, tx.inputAmount.toString())
-      }
-      if (btcToUsdRate && btcToUsdRate !== '0') {
-        amountUsd = bns.div(amountBtc, btcToUsdRate, 8)
-      } else {
-        console.log('Unable to calculate ANY fiat value for: ', tx.inputCurrency)
       }
     }
     // now stick it into the txDataMap
