@@ -50,8 +50,8 @@ const jsonConfig = {
 
 let ratePairs: { [date: string]: { [code: string]: string } } = {}
 let ratesLoaded = false
-// let btcRates = {}
-// let btcRatesLoaded = false
+let btcRates = {}
+let btcRatesLoaded = false
 
 // type getBtcRateOptions = {
 //   from: string,
@@ -64,8 +64,8 @@ let ratesLoaded = false
 function clearCache () {
   ratePairs = {}
   ratesLoaded = false
-  // btcRates = {}
-  // btcRatesLoaded = false
+  btcRates = {}
+  btcRatesLoaded = false
 }
 
 async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
@@ -251,7 +251,7 @@ async function checkSwapService (
       amountBtc = '0'
       amountUsd = tx.outputAmount
     } else {
-      const btcToUsdRate = await getUsdRate('BTC', dateStr)
+      const btcToUsdRate = await getUsdRate('BTC', dateStr, false)
 
       // most partners
       if (tx.inputCurrency === 'BTC') {
@@ -259,7 +259,7 @@ async function checkSwapService (
       } else {
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
-        const txInputCurToUsdRate = await getUsdRate(tx.inputCurrency, dateStr)
+        const txInputCurToUsdRate = await getUsdRate(tx.inputCurrency, dateStr, true)
         if (txInputCurToUsdRate !== coinApiRateLookupError && txInputCurToUsdRate !== '0') {
           const btcToTxInputCurRate = bns.div(btcToUsdRate, txInputCurToUsdRate, 8)
           amountBtc = bns.mul(btcToTxInputCurRate, tx.inputAmount.toString())
@@ -326,10 +326,10 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
   js.writeFileSync('./cache/ratePairs.json', ratePairs)
 }
 
-async function getUsdRate (currencyCode: string, date: string) {
+async function getUsdRate (currencyCode: string, date: string, includeBtcRates: boolean) {
   let usdRate = await getHistoricalUsdRate(currencyCode, date)
   if (!usdRate || usdRate === '') {
-    usdRate = await getCurrentUsdRate(currencyCode)
+    usdRate = await getCurrentUsdRate(currencyCode, includeBtcRates)
   }
   return usdRate
 }
@@ -358,28 +358,28 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
   }
 }
 
-// function queryBtcRates (currencyCode: string) {
-//   if (!btcRatesLoaded) {
-//     // check btcRates
-//     try {
-//       btcRates = js.readFileSync('./cache/btcRates.json')
-//     } catch (e) {
-//       console.log(e)
-//     }
-//     btcRatesLoaded = true
-//   }
-//
-//   const pair = `${currencyCode}_BTC`
-//   if (btcRates[pair]) {
-//     return btcRates[pair]
-//   }
-// }
-//
-// function updateBtcRate (currencyCode: string) {
-//   const rate = bns.div(fromToUsd, toToUsd, 8)
-//   btcRates[pair] = rate
-//   js.writeFileSync('./cache/btcRates.json', btcRates)
-// }
+function queryBtcRates (currencyCode: string) {
+  if (!btcRatesLoaded) {
+    // check btcRates
+    try {
+      btcRates = js.readFileSync('./cache/btcRates.json')
+    } catch (e) {
+      console.log(e)
+    }
+    btcRatesLoaded = true
+  }
+
+  const pair = `${currencyCode}_BTC`
+  if (btcRates[pair]) {
+    return btcRates[pair]
+  }
+}
+
+function updateBtcRate (currencyCode: string, rate: string) {
+  const pair = `${currencyCode}_BTC`
+  btcRates[pair] = rate
+  js.writeFileSync('./cache/btcRates.json', btcRates)
+}
 
 async function queryCoinCap (currencyCode: string) {
   if (!_coincapResults) {
@@ -395,10 +395,17 @@ async function queryCoinCap (currencyCode: string) {
   }
 }
 
-async function getCurrentUsdRate (currencyCode: string) {
-  let usdRate = await queryCoinCap(currencyCode)
+async function getCurrentUsdRate (currencyCode: string, includeBtcRates: boolean) {
+  let usdRate = includeBtcRates ? queryBtcRates(currencyCode) : undefined
   if (!usdRate || usdRate === '') {
-    usdRate = await getFiatRate(currencyCode, 'USD')
+    usdRate = await queryCoinCap(currencyCode)
+    if (!usdRate || usdRate === '') {
+      usdRate = await getFiatRate(currencyCode, 'USD')
+    }
+
+    if (includeBtcRates && usdRate && usdRate !== '') {
+      updateBtcRate(currencyCode, usdRate)
+    }
   }
 
   if (!usdRate || usdRate === '') {
