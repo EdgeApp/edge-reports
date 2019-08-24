@@ -264,7 +264,9 @@ async function checkSwapService (
     } else {
       const btcToUsdRate = await getUsdRate('BTC', dateStr)
       const txInputToUsdRate = await getUsdRate(tx.inputCurrency, dateStr)
-      amountUsd = bns.div(tx.inputAmount.toString(), txInputToUsdRate, 8)
+      if (txInputToUsdRate !== '0') {
+        amountUsd = bns.div(tx.inputAmount.toString(), txInputToUsdRate, 8)
+      }
 
       // most partners
       if (tx.inputCurrency === 'BTC') {
