@@ -262,7 +262,7 @@ async function checkSwapService (
       amountBtc = '0'
       amountUsd = tx.outputAmount
     } else {
-      const btcToUsdRate = await getUsdRate('BTC', dateStr, false)
+      const btcToUsdRate = await getUsdRate('BTC', dateStr)
 
       // most partners
       if (tx.inputCurrency === 'BTC') {
@@ -270,11 +270,20 @@ async function checkSwapService (
       } else {
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
-        const txInputCurToUsdRate = await getUsdRate(tx.inputCurrency, dateStr, true)
-        if (txInputCurToUsdRate !== coinApiRateLookupError && txInputCurToUsdRate !== '0') {
-          const btcToTxInputCurRate = bns.div(btcToUsdRate, txInputCurToUsdRate, 8)
-          amountBtc = bns.mul(btcToTxInputCurRate, tx.inputAmount.toString())
+        // First, check the btcRates cache file...
+        let btcToTxInputCurRate = queryBtcRates(tx.inputCurrency)
+        if (!btcToTxInputCurRate) {
+          // If it's not cached yet then we'll have to generate it the long way...
+          const txInputCurToUsdRate = await getUsdRate(tx.inputCurrency, dateStr)
+          if (txInputCurToUsdRate !== coinApiRateLookupError && txInputCurToUsdRate !== '0') {
+            btcToTxInputCurRate = bns.div(btcToUsdRate, txInputCurToUsdRate, 8)
+          }
+          // And update the cache...
+          if (btcToTxInputCurRate && btcToTxInputCurRate !== '') {
+            updateBtcRate(tx.inputCurrency, btcToTxInputCurRate)
+          }
         }
+        amountBtc = bns.mul(btcToTxInputCurRate, tx.inputAmount.toString())
       }
       if (btcToUsdRate && btcToUsdRate !== '0') {
         amountUsd = bns.div(amountBtc, btcToUsdRate, 8)
@@ -342,13 +351,13 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
   }
 }
 
-async function getUsdRate (currencyCode: string, date: string, includeBtcRates: boolean) {
+async function getUsdRate (currencyCode: string, date: string) {
   if (currencyCode === 'USD') {
     return '1'
   }
   let usdRate = await getHistoricalUsdRate(currencyCode, date)
   if (!usdRate || usdRate === '') {
-    usdRate = await getCurrentUsdRate(currencyCode, includeBtcRates)
+    usdRate = await getCurrentUsdRate(currencyCode)
   }
   return usdRate
 }
@@ -391,6 +400,8 @@ function queryBtcRates (currencyCode: string) {
   const pair = `${currencyCode}_BTC`
   if (btcRates[pair]) {
     return btcRates[pair]
+  } else {
+    return ''
   }
 }
 
@@ -416,17 +427,10 @@ async function queryCoinCap (currencyCode: string) {
   }
 }
 
-async function getCurrentUsdRate (currencyCode: string, includeBtcRates: boolean) {
-  let usdRate = includeBtcRates ? queryBtcRates(currencyCode) : undefined
+async function getCurrentUsdRate (currencyCode: string) {
+  let usdRate = await queryCoinCap(currencyCode)
   if (!usdRate || usdRate === '') {
-    usdRate = await queryCoinCap(currencyCode)
-    if (!usdRate || usdRate === '') {
-      usdRate = await getFiatRate(currencyCode, 'USD')
-    }
-
-    if (includeBtcRates && usdRate && usdRate !== '') {
-      updateBtcRate(currencyCode, usdRate)
-    }
+    usdRate = await getFiatRate(currencyCode, 'USD')
   }
 
   if (!usdRate || usdRate === '') {
