@@ -12,8 +12,6 @@ const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
 
 export type TxData = {
   txCount: number,
-  // avgBtc: string,
-  // avgUsd: string,
   currencyAmount: { [currencyCode: string]: string },
   amountBtc: string,
   amountUsd: string,
@@ -52,14 +50,6 @@ let ratePairs: { [date: string]: { [code: string]: string } } = {}
 let ratesLoaded = false
 let btcRates = {}
 let btcRatesLoaded = false
-
-type getBtcRateOptions = {
-  from: string,
-  to: string,
-  year: string,
-  month: string,
-  day: string
-}
 
 function clearCache () {
   ratePairs = {}
@@ -104,13 +94,6 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
     return ''
   }
 }
-
-// {
-//   "time": "2019-04-26T23:59:59.6886775Z",
-//   "asset_id_base": "BTC",
-//   "asset_id_quote": "USD",
-//   "rate": 5242.7856103737234839148323278
-// }
 
 async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string) {
   const currentTimestamp = Date.now()
@@ -161,22 +144,6 @@ async function checkSwapService (
   swapFuncParams: SwapFuncParams
 ) {
   clearCache()
-  // const diskCache = js.readFileSync(cacheFile)
-  // const cachedTransactions = diskCache.txs
-  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
-  // let newTransactions = []
-  // if (!useCache) {
-  //   while (newTransactions.length === 0) {
-  //     try {
-  //       const newQuery = await theFetch()
-  //       newTransactions = newQuery.txs
-  //       console.log(`Got new transactions... ${newTransactions.length}`)
-  //     } catch (e) {
-  //       console.log(e)
-  //       return
-  //     }
-  //   }
-  // }
 
   const { endDate } = swapFuncParams
   // diskCache is the [prefix]Raw.json file's transactions and an 'offset' property (that is persistent)
@@ -516,13 +483,6 @@ function findInExchangeRate (fiatCurrency: string) {
   }
   return undefined
 }
-
-// {
-//   "time": "2019-04-26T23:59:59.6886775Z",
-//   "asset_id_base": "BTC",
-//   "asset_id_quote": "USD",
-//   "rate": 5242.7856103737234839148323278
-// }
 
 function pad (num, size) {
   let s = num + ''
