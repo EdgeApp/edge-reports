@@ -244,6 +244,7 @@ async function checkSwapService (
     const day = pad(date.getUTCDate(), 2)
     const hour = pad(date.getUTCHours(), 2)
     const mins = pad(date.getUTCMinutes(), 2)
+    const dateStr = `${year.toString()}-${month}-${day}`
 
     let idx
     const { interval } = swapFuncParams
@@ -294,48 +295,31 @@ async function checkSwapService (
       amountBtc = '0'
       amountUsd = tx.outputAmount
     } else {
+      const usdPerBtcRate = await getUsdRate('BTC', dateStr)
+      const usdPerTxInputRate = await getUsdRate(tx.inputCurrency, dateStr)
+      if (usdPerTxInputRate !== '0') {
+        amountUsd = bns.mul(tx.inputAmount.toString(), usdPerTxInputRate)
+      }
+
       // most partners
       if (tx.inputCurrency === 'BTC') {
         amountBtc = tx.inputAmount.toString()
       } else {
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
-        // will try grabbing from cache and then query coincap.io if nothing cached
-        const rate = await getBtcRate({
-          from: tx.inputCurrency,
-          to: 'BTC',
-          year: year.toString(),
-          month,
-          day
-        })
-        // convert BTC to USD
-        amountBtc = bns.mul(rate, tx.inputAmount.toString())
-      }
-      // gets USD value of Bitcoin
-      // getHistoricalUsdRate tries to get rate from ratePairs.json cache
-      // then query coinmarketCap, then coinapi until it finds a
-      // USD rate for the currencyCode and date
-      let btcRate = await getHistoricalUsdRate(
-        'BTC',
-        `${year.toString()}-${month}-${day}`
-      )
-      // converts value in BTC to value in USD
-      if (btcRate) {
-        amountUsd = bns.mul(amountBtc, btcRate)
-      } else {
-        if (!_coincapResults) {
-          const request = `https://api.coincap.io/v2/assets`
-          const response = await fetch(request)
-          _coincapResults = await response.json()
+        // First, check the btcRates cache file...
+        let btcToTxInputCurRate = queryBtcRates(tx.inputCurrency)
+        if (!btcToTxInputCurRate) {
+          // If it's not cached yet then we'll have to generate it the long way...
+          if (usdPerTxInputRate !== coinApiRateLookupError && usdPerTxInputRate !== '0') {
+            btcToTxInputCurRate = bns.div(usdPerTxInputRate, usdPerBtcRate, 8)
+          }
+          // And update the cache...
+          if (btcToTxInputCurRate && btcToTxInputCurRate !== '') {
+            updateBtcRate(tx.inputCurrency, btcToTxInputCurRate)
+          }
         }
-        const btcData = _coincapResults.data.find(currency => currency.symbol.toUpperCase() === 'BTC')
-        if (btcData) {
-          btcRate = btcData.priceUsd
-          amountUsd = bns.mul(amountBtc, btcRate)
-        } else {
-          console.log('Unable to calculate ANY fiat value for: ', tx.inputCurrency)
-          btcRate = '0'
-        }
+        amountBtc = bns.mul(tx.inputAmount.toString(), btcToTxInputCurRate)
       }
     }
     // now stick it into the txDataMap
