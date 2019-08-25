@@ -12,8 +12,6 @@ const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
 
 export type TxData = {
   txCount: number,
-  // avgBtc: string,
-  // avgUsd: string,
   currencyAmount: { [currencyCode: string]: string },
   amountBtc: string,
   amountUsd: string,
@@ -52,14 +50,6 @@ let ratePairs: { [date: string]: { [code: string]: string } } = {}
 let ratesLoaded = false
 let btcRates = {}
 let btcRatesLoaded = false
-
-// type getBtcRateOptions = {
-//   from: string,
-//   to: string,
-//   year: string,
-//   month: string,
-//   day: string
-// }
 
 function clearCache () {
   ratePairs = {}
@@ -438,81 +428,6 @@ async function getCurrentUsdRate (currencyCode: string) {
   }
 }
 
-// problematic routine, should be called "getHistoricalRate"?
-// async function getBtcRate (opts: getBtcRateOptions): Promise<string> {
-//   const { from, to, year, month, day } = opts
-//   const date = `${year}-${month}-${day}`
-//   const pair = `${from}_${to}`
-//
-//   let fromToUsd
-//   let toToUsd
-//   try {
-//     // if the pair data already exists in memory (no date, though)...
-//     if (btcRates[pair]) {
-//       // these rates are not historical, only ad-hoc
-//       // console.log('ad-hoc crypto-to-BTC rates are available in memory')
-//     }
-//     fromToUsd = await getHistoricalUsdRate(from.toUpperCase(), date)
-//     toToUsd = await getHistoricalUsdRate(to.toUpperCase(), date)
-//     // const finalRate = bns.div(fromToUsd, toToUsd, 8)
-//     const finalRate = bns.div('1', '1', 8)
-//     return finalRate
-//   } catch (e) {
-//     try {
-//       // if the ad-hoc rates have not been loaded, then load them
-//       if (!btcRatesLoaded) {
-//         // check btcRates
-//         try {
-//           btcRates = js.readFileSync('./cache/btcRates.json')
-//         } catch (e) {
-//           console.log(e)
-//         }
-//         btcRatesLoaded = true
-//       }
-//       // and try to return the rate
-//       if (btcRates[pair]) {
-//         return btcRates[pair]
-//       }
-//       // if coincap.io has not been queried yet, query and store results
-//       if (!_coincapResults) {
-//         const request = `https://api.coincap.io/v2/assets`
-//         const response = await fetch(request)
-//         _coincapResults = await response.json()
-//       }
-//       for (const c of _coincapResults.data) {
-//         if (c.symbol.toUpperCase() === from.toUpperCase()) {
-//           fromToUsd = c.priceUsd
-//         }
-//         if (c.symbol.toUpperCase() === to.toUpperCase()) {
-//           toToUsd = c.priceUsd
-//         }
-//         if (fromToUsd && toToUsd) {
-//           break
-//         }
-//       }
-//
-//       // Try to get fiat rates
-//       if (!fromToUsd) {
-//         fromToUsd = await getFiatRate(from, 'USD')
-//       }
-//       if (!toToUsd) {
-//         toToUsd = await getFiatRate(to, 'USD')
-//       }
-//
-//       // write ad-hoc rates to btcRates.json and return rates
-//       if (fromToUsd && toToUsd) {
-//         const rate = bns.div(fromToUsd, toToUsd, 8)
-//         btcRates[pair] = rate
-//         js.writeFileSync('./cache/btcRates.json', btcRates)
-//         return rate
-//       }
-//       return '0'
-//     } catch (e) {
-//       throw e
-//     }
-//   }
-// }
-
 /*
  * Finds the exchange rate from one fiat currency to another.
  * Returns: String w/ float-value or undefined if either currency is not found
@@ -556,13 +471,6 @@ function findInExchangeRate (fiatCurrency: string) {
   }
   return undefined
 }
-
-// {
-//   "time": "2019-04-26T23:59:59.6886775Z",
-//   "asset_id_base": "BTC",
-//   "asset_id_quote": "USD",
-//   "rate": 5242.7856103737234839148323278
-// }
 
 function pad (num, size) {
   let s = num + ''
