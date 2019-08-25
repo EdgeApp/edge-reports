@@ -109,31 +109,45 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
 //   "rate": 5242.7856103737234839148323278
 // }
 
-// only queries altcoin to USD
-async function queryCoinMarketCap (currencyCode: string, date: string) {
-  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
+async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string) {
+  const currentTimestamp = Date.now()
+  const targetDate = new Date(date)
+  const targetTimestamp = targetDate.getTime()
+  // if less than 90 days old (cmc API restriction)
+  const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
+  const isApiKeyConfigured = config.coinMarketCapAPiKey
+  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
 
-  let response
-  const fetchOptions = {
-    method: 'GET',
-    headers: {
-      'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
-    },
-    json: true
-  }
-  // console.log('fetchOptions: ', fetchOptions)
-  try {
-    response = await fetch(url, fetchOptions)
-    const jsonObj = await response.json()
-    if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
-      throw new Error('No rate from CMC')
+  if (
+    soonerThan90Days &&
+    isApiKeyConfigured &&
+    !isCurrencyExcluded
+  ) {
+    const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
+
+    let response
+    const fetchOptions = {
+      method: 'GET',
+      headers: {
+        'X-CMC_PRO_API_KEY': config.coinMarketCapAPiKey
+      },
+      json: true
     }
-    return jsonObj.data.quotes[0].quote.USD.price.toString()
-  } catch (e) {
-    // if (!doSummary) {
-    console.log('No CoinMarketCap quote: ', e)
-    // }
-    throw e
+
+    try {
+      response = await fetch(url, fetchOptions)
+      const jsonObj = await response.json()
+      if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
+        console.log(`No rate from CMC: ${currencyCode} date:${date} response.status:${response.status}`)
+        return ''
+      }
+      return jsonObj.data.quotes[0].quote.USD.price.toString()
+    } catch (e) {
+      console.log(`No CoinMarketCap ${currencyCode} date:${date} quote: `, e)
+      return ''
+    }
+  } else {
+    return ''
   }
 }
 
