@@ -164,7 +164,15 @@ async function checkSwapService (
     let match = false
     // omit transactions that exist in the older pre-existing cache
     for (const oldTx of cachedTransactions) {
-      if (
+      if (oldTx.inputTXID && newTx.inputTXID) {
+        if (
+          oldTx.inputTXID === newTx.inputTXID &&
+          oldTx.status === newTx.status
+        ) {
+          match = true
+          break
+        }
+      } else if (
         oldTx.outputAmount === newTx.outputAmount &&
         oldTx.status === newTx.status &&
         oldTx.timestamp === newTx.timestamp
