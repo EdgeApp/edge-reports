@@ -65,31 +65,40 @@ function clearCache () {
   btcRatesLoaded = false
 }
 
-// only queries altcoin to USD
-async function queryCoinApi (currencyCode: string, date: string) {
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=2017-08-09T12:00:00.0000000Z`
-  const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
-  // const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD`
-  //   if (!doSummary) {
-  //     console.log(url)
-  //   }
-  // console.log('kylan fetched url is: ', url)
-  let response
-  try {
-    response = await fetch(url, {
-      method: 'GET'
-    })
-    const jsonObj = await response.json()
-    if (!jsonObj.rate) {
-      throw new Error('No rate from CoinAPI')
+async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
+  const currentTimestamp = Date.now()
+  const targetDate = new Date(date)
+  const targetTimestamp = targetDate.getTime()
+  // if less than 90 days old (cmc API restriction) <<== Is this true for CoinApi?
+  const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
+  const isApiKeyConfigured = config.coinApiKey
+  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
+  if (
+    soonerThan90Days &&
+    isApiKeyConfigured &&
+    !isCurrencyExcluded
+  ) {
+    const url = `https://rest.coinapi.io/v1/exchangerate/${currencyCode}/USD?time=${date}T00:00:00.0000000Z&apiKey=${config.coinApiKey}`
+    try {
+      const response = await fetch(url, {
+        method: 'GET'
+      })
+      if (response.status === 200) {
+        const jsonObj = await response.json()
+        if (!jsonObj.rate) {
+          return coinApiRateLookupError
+        }
+        return jsonObj.rate.toString()
+      } else {
+        return ''
+      }
+    } catch (e) {
+      console.log(e)
+      console.log(`${date} ${currencyCode}`)
+      return ''
     }
-    return jsonObj.rate.toString()
-  } catch (e) {
-    // if (!doSummary) {
-    console.log(e)
-    console.log(`${date} ${currencyCode}`)
-    // }
-    throw e
+  } else {
+    return ''
   }
 }
 
