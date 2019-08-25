@@ -7,6 +7,9 @@ const confFileName = './config.json'
 const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
+const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
+const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
+
 export type TxData = {
   txCount: number,
   // avgBtc: string,
