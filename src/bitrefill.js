@@ -50,9 +50,17 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
       method: 'GET',
       headers
     })
-    const jsonObj = await result.json()
-    const txs = (jsonObj && jsonObj.orders && jsonObj.orders.length) ? jsonObj.orders : []
-    // console.log(`Bitrefill: count:${count} count:${txs.length}`)
+    let jsonObj
+    let txs
+    try {
+      jsonObj = await result.json()
+      txs =
+        jsonObj && jsonObj.orders && jsonObj.orders.length ? jsonObj.orders : []
+      // console.log(`Bitrefill: count:${count} count:${txs.length}`)
+    } catch (e) {
+      console.log(e)
+      break
+    }
 
     for (const tx of txs) {
       if (
