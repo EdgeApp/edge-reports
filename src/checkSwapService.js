@@ -124,12 +124,13 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
       response = await fetch(url, fetchOptions)
       const jsonObj = await response.json()
       if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
-        throw new Error(`No rate from CMC: ${currencyCode}`)
+        console.log(`No rate from CMC: ${currencyCode} date:${date} response.status:${response.status}`)
+        return ''
       }
       return jsonObj.data.quotes[0].quote.USD.price.toString()
     } catch (e) {
-      console.log(`No CoinMarketCap ${currencyCode} quote: `, e)
-      throw e
+      console.log(`No CoinMarketCap ${currencyCode} date:${date} quote: `, e)
+      return ''
     }
   } else {
     return ''
