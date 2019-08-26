@@ -51,7 +51,7 @@ async function fetchMoonpay (swapFuncParams: SwapFuncParams) {
       headers
     })
     const txs = await result.json()
-    console.log(`Moonpay: offset:${offset} count:${txs.length} url:${url}`)
+    console.log(`Moonpay: offset:${offset} count:${txs.length}`)
 
     for (const tx of txs) {
       if (tx.status === 'completed') {
