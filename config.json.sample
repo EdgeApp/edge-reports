@@ -1,0 +1,33 @@
+{
+  "timeInterval": "month",
+  "endDate": "2018-01",
+  "outputPath": "./index.txt",
+  "outputDelay": 5000,
+  "coinApiKey": "xxx",
+  "coinMarketCapAPiKey": "xxx",
+  "shapeShiftApiKey": "xxx",
+  "shapeShiftToken": "xxx",
+  "libertyXApiKey": "xxx",
+  "changellyApiKey": "xxx",
+  "changenowApiKey": "xxx",
+  "changellyApiSecret": "xxx",
+  "faastAffiliateId": "xxx",
+  "faastSecret": "xxx",
+  "totleApiKey": "xxx",
+  "foxCredentials": {
+  "apiKey": "xxx",
+  "secretToken": "xxx"
+  },
+  "bitrefillCredentials": {
+    "apiKey": "xxx",
+    "apiSecret": "xxx"
+  },
+  "godex": {
+    "apiKey": "xxx"
+  },
+  "coinswitch": {
+    "apiKey": "xxx"
+  },
+  "moonpayApiKey": "xxx",
+  "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"]
+}
