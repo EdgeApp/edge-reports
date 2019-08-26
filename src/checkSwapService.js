@@ -344,7 +344,7 @@ async function getUsdRate (currencyCode: string, date: string) {
     return '1'
   }
   let usdRate = await getHistoricalUsdRate(currencyCode, date)
-  if (!usdRate || usdRate === '') {
+  if (!usdRate) {
     usdRate = await getCurrentUsdRate(currencyCode)
   }
   return usdRate
@@ -353,9 +353,9 @@ async function getUsdRate (currencyCode: string, date: string) {
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
   let usdRate = queryRatePairs(currencyCode, date)
   if (usdRate !== coinApiRateLookupError) {
-    if (!usdRate || usdRate === '') {
+    if (!usdRate) {
       usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
-      if (!usdRate || usdRate === '') {
+      if (!usdRate) {
         usdRate = await queryCoinApiForUsdRate(currencyCode, date)
       }
     }
@@ -390,11 +390,11 @@ async function queryCoinCap (currencyCode: string) {
 
 async function getCurrentUsdRate (currencyCode: string) {
   let usdRate = await queryCoinCap(currencyCode)
-  if (!usdRate || usdRate === '') {
+  if (!usdRate) {
     usdRate = await getFiatRate('USD', currencyCode)
   }
 
-  if (!usdRate || usdRate === '') {
+  if (!usdRate) {
     return '0'
   } else {
     return usdRate
