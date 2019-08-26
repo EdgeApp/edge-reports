@@ -29,5 +29,6 @@
     "apiKey": "xxx"
   },
   "moonpayApiKey": "xxx",
-  "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"]
+  "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"],
+  "coinApiExcludeLookup": ["USD", "EUR", "GBP"]
 }

@@ -8,6 +8,7 @@ const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
 const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
+const coinApiExcludeLookup = config.coinApiExcludeLookup || []
 const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
 
 export type TxData = {
@@ -65,7 +66,7 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
   // if less than 90 days old (cmc API restriction) <<== Is this true for CoinApi?
   const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
   const isApiKeyConfigured = config.coinApiKey
-  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
+  const isCurrencyExcluded = coinApiExcludeLookup.find(c => c === currencyCode.toUpperCase())
   if (
     soonerThan90Days &&
     isApiKeyConfigured &&
