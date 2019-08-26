@@ -49,14 +49,10 @@ const jsonConfig = {
 
 let ratePairs: { [date: string]: { [code: string]: string } } = {}
 let ratesLoaded = false
-let btcRates = {}
-let btcRatesLoaded = false
 
 function clearCache () {
   ratePairs = {}
   ratesLoaded = false
-  btcRates = {}
-  btcRatesLoaded = false
 }
 
 async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
@@ -275,19 +271,10 @@ async function checkSwapService (
       } else {
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
-        // First, check the btcRates cache file...
-        let btcToTxInputCurRate = queryBtcRates(tx.inputCurrency)
-        if (!btcToTxInputCurRate) {
-          // If it's not cached yet then we'll have to generate it the long way...
-          if (usdPerTxInputRate !== coinApiRateLookupError && usdPerTxInputRate !== '0') {
-            btcToTxInputCurRate = bns.div(usdPerTxInputRate, usdPerBtcRate, 8)
-          }
-          // And update the cache...
-          if (btcToTxInputCurRate && btcToTxInputCurRate !== '') {
-            updateBtcRate(tx.inputCurrency, btcToTxInputCurRate)
-          }
+        if (usdPerTxInputRate !== coinApiRateLookupError && usdPerTxInputRate !== '0') {
+          const btcToTxInputCurRate = bns.div(usdPerTxInputRate, usdPerBtcRate, 8)
+          amountBtc = bns.mul(tx.inputAmount.toString(), btcToTxInputCurRate)
         }
-        amountBtc = bns.mul(tx.inputAmount.toString(), btcToTxInputCurRate)
       }
     }
     // now stick it into the txDataMap
@@ -384,33 +371,6 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     return usdRate
   } else {
     return ''
-  }
-}
-
-function queryBtcRates (currencyCode: string) {
-  if (!btcRatesLoaded) {
-    // check btcRates
-    try {
-      btcRates = js.readFileSync('./cache/btcRates.json')
-    } catch (e) {
-      console.log(e)
-    }
-    btcRatesLoaded = true
-  }
-
-  const pair = `${currencyCode}_BTC`
-  if (btcRates[pair]) {
-    return btcRates[pair]
-  } else {
-    return ''
-  }
-}
-
-function updateBtcRate (currencyCode: string, rate: string) {
-  const pair = `${currencyCode}_BTC`
-  if (!btcRates[pair]) {
-    btcRates[pair] = rate
-    js.writeFileSync('./cache/btcRates.json', btcRates)
   }
 }
 
