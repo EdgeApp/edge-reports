@@ -391,7 +391,7 @@ async function queryCoinCap (currencyCode: string) {
 async function getCurrentUsdRate (currencyCode: string) {
   let usdRate = await queryCoinCap(currencyCode)
   if (!usdRate || usdRate === '') {
-    usdRate = await getFiatRate(currencyCode, 'USD')
+    usdRate = await getFiatRate('USD', currencyCode)
   }
 
   if (!usdRate || usdRate === '') {
