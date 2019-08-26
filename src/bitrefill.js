@@ -16,15 +16,12 @@ if (config.bitrefillCredentials) {
   password = config.bitrefillCredentials.apiSecret
 }
 const headers = {
-  Authorization: 'Basic ' + Buffer.from(username + ':' + password).toString('base64')
+  Authorization:
+    'Basic ' + Buffer.from(username + ':' + password).toString('base64')
 }
 
 async function doBitrefill (swapFuncParams: SwapFuncParams) {
-  return checkSwapService(fetchBitrefill,
-    CACHE_FILE,
-    'BR',
-    swapFuncParams
-  )
+  return checkSwapService(fetchBitrefill, CACHE_FILE, 'BR', swapFuncParams)
 }
 
 async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
@@ -50,9 +47,17 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
       method: 'GET',
       headers
     })
-    const jsonObj = await result.json()
-    const txs = (jsonObj && jsonObj.orders && jsonObj.orders.length) ? jsonObj.orders : []
-    // console.log(`Bitrefill: count:${count} count:${txs.length}`)
+    let jsonObj
+    let txs
+    try {
+      jsonObj = await result.json()
+      txs =
+        jsonObj && jsonObj.orders && jsonObj.orders.length ? jsonObj.orders : []
+      // console.log(`Bitrefill: count:${count} count:${txs.length}`)
+    } catch (e) {
+      console.log(e)
+      break
+    }
 
     for (const tx of txs) {
       if (
@@ -65,12 +70,19 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
 
         let inputAmount = 0
         let inputCurrency = 'BTC'
-        if (typeof tx.coinCurrency === 'string' && tx.coinCurrency.toUpperCase() !== 'BTC') {
+        if (
+          typeof tx.coinCurrency === 'string' &&
+          tx.coinCurrency.toUpperCase() !== 'BTC'
+        ) {
           const inputAmountStr = bns.div(tx.payment.altcoinPrice, '1', 8)
           inputAmount = Number(inputAmountStr)
           inputCurrency = tx.coinCurrency.toUpperCase()
         } else {
-          const inputAmountStr = bns.div(tx.satoshiPrice.toString(), '100000000', 8)
+          const inputAmountStr = bns.div(
+            tx.satoshiPrice.toString(),
+            '100000000',
+            8
+          )
           inputAmount = Number(inputAmountStr)
         }
         let inputAddress = ''
