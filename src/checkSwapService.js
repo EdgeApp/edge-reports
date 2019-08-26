@@ -9,7 +9,7 @@ const jsonFormat = require('json-format')
 
 const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
 const coinApiExcludeLookup = config.coinApiExcludeLookup || []
-const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
+const COINAPI_RATE_PAIR_ERROR = 'COINAPI_RATE_PAIR_ERROR'
 
 export type TxData = {
   txCount: number,
@@ -76,7 +76,7 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
       if (response.status === 200) {
         const jsonObj = await response.json()
         if (!jsonObj.rate) {
-          return coinApiRateLookupError
+          return COINAPI_RATE_PAIR_ERROR
         }
         return jsonObj.rate.toString()
       } else {
@@ -271,7 +271,7 @@ async function checkSwapService (
       } else {
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
-        if (usdPerTxInputRate !== coinApiRateLookupError && usdPerTxInputRate !== '0') {
+        if (usdPerTxInputRate !== COINAPI_RATE_PAIR_ERROR && usdPerTxInputRate !== '0') {
           const btcToTxInputCurRate = bns.div(usdPerTxInputRate, usdPerBtcRate, 8)
           amountBtc = bns.mul(tx.inputAmount.toString(), btcToTxInputCurRate)
         }
@@ -352,7 +352,7 @@ async function getUsdRate (currencyCode: string, date: string) {
 
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
   let usdRate = queryRatePairs(currencyCode, date)
-  if (usdRate !== coinApiRateLookupError) {
+  if (usdRate !== COINAPI_RATE_PAIR_ERROR) {
     if (!usdRate) {
       usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
       if (!usdRate) {
@@ -365,7 +365,7 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     } else {
       // If currencyCode & date pair are NOT found in either CoinMarketCap nor CoinApi then
       //  mark it as being in 'error' in the ratePairs cache structure
-      updateRatePairs(currencyCode, date, coinApiRateLookupError)
+      updateRatePairs(currencyCode, date, COINAPI_RATE_PAIR_ERROR)
     }
 
     return usdRate
