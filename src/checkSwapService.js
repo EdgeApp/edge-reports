@@ -8,7 +8,8 @@ const config = js.readFileSync(confFileName)
 const jsonFormat = require('json-format')
 
 const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
-const coinApiRateLookupError = 'COINAPI_RATE_PAIR_ERROR'
+const coinApiExcludeLookup = config.coinApiExcludeLookup || []
+const COINAPI_RATE_PAIR_ERROR = 'COINAPI_RATE_PAIR_ERROR'
 
 export type TxData = {
   txCount: number,
@@ -48,14 +49,10 @@ const jsonConfig = {
 
 let ratePairs: { [date: string]: { [code: string]: string } } = {}
 let ratesLoaded = false
-let btcRates = {}
-let btcRatesLoaded = false
 
 function clearCache () {
   ratePairs = {}
   ratesLoaded = false
-  btcRates = {}
-  btcRatesLoaded = false
 }
 
 async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
@@ -65,7 +62,7 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
   // if less than 90 days old (cmc API restriction) <<== Is this true for CoinApi?
   const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
   const isApiKeyConfigured = config.coinApiKey
-  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
+  const isCurrencyExcluded = coinApiExcludeLookup.find(c => c === currencyCode.toUpperCase())
   if (
     soonerThan90Days &&
     isApiKeyConfigured &&
@@ -79,7 +76,7 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
       if (response.status === 200) {
         const jsonObj = await response.json()
         if (!jsonObj.rate) {
-          return coinApiRateLookupError
+          return COINAPI_RATE_PAIR_ERROR
         }
         return jsonObj.rate.toString()
       } else {
@@ -274,19 +271,10 @@ async function checkSwapService (
       } else {
         // get exchange currency and convert to BTC equivalent for that date and time
         // then find out equivalent amount of BTC
-        // First, check the btcRates cache file...
-        let btcToTxInputCurRate = queryBtcRates(tx.inputCurrency)
-        if (!btcToTxInputCurRate) {
-          // If it's not cached yet then we'll have to generate it the long way...
-          if (usdPerTxInputRate !== coinApiRateLookupError && usdPerTxInputRate !== '0') {
-            btcToTxInputCurRate = bns.div(usdPerTxInputRate, usdPerBtcRate, 8)
-          }
-          // And update the cache...
-          if (btcToTxInputCurRate && btcToTxInputCurRate !== '') {
-            updateBtcRate(tx.inputCurrency, btcToTxInputCurRate)
-          }
+        if (usdPerTxInputRate !== COINAPI_RATE_PAIR_ERROR && usdPerTxInputRate !== '0') {
+          const btcToTxInputCurRate = bns.div(usdPerTxInputRate, usdPerBtcRate, 8)
+          amountBtc = bns.mul(tx.inputAmount.toString(), btcToTxInputCurRate)
         }
-        amountBtc = bns.mul(tx.inputAmount.toString(), btcToTxInputCurRate)
       }
     }
     // now stick it into the txDataMap
@@ -356,7 +344,7 @@ async function getUsdRate (currencyCode: string, date: string) {
     return '1'
   }
   let usdRate = await getHistoricalUsdRate(currencyCode, date)
-  if (!usdRate || usdRate === '') {
+  if (!usdRate) {
     usdRate = await getCurrentUsdRate(currencyCode)
   }
   return usdRate
@@ -364,10 +352,10 @@ async function getUsdRate (currencyCode: string, date: string) {
 
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
   let usdRate = queryRatePairs(currencyCode, date)
-  if (usdRate !== coinApiRateLookupError) {
-    if (!usdRate || usdRate === '') {
+  if (usdRate !== COINAPI_RATE_PAIR_ERROR) {
+    if (!usdRate) {
       usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
-      if (!usdRate || usdRate === '') {
+      if (!usdRate) {
         usdRate = await queryCoinApiForUsdRate(currencyCode, date)
       }
     }
@@ -377,39 +365,12 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
     } else {
       // If currencyCode & date pair are NOT found in either CoinMarketCap nor CoinApi then
       //  mark it as being in 'error' in the ratePairs cache structure
-      updateRatePairs(currencyCode, date, coinApiRateLookupError)
+      updateRatePairs(currencyCode, date, COINAPI_RATE_PAIR_ERROR)
     }
 
     return usdRate
   } else {
     return ''
-  }
-}
-
-function queryBtcRates (currencyCode: string) {
-  if (!btcRatesLoaded) {
-    // check btcRates
-    try {
-      btcRates = js.readFileSync('./cache/btcRates.json')
-    } catch (e) {
-      console.log(e)
-    }
-    btcRatesLoaded = true
-  }
-
-  const pair = `${currencyCode}_BTC`
-  if (btcRates[pair]) {
-    return btcRates[pair]
-  } else {
-    return ''
-  }
-}
-
-function updateBtcRate (currencyCode: string, rate: string) {
-  const pair = `${currencyCode}_BTC`
-  if (!btcRates[pair]) {
-    btcRates[pair] = rate
-    js.writeFileSync('./cache/btcRates.json', btcRates)
   }
 }
 
@@ -429,11 +390,11 @@ async function queryCoinCap (currencyCode: string) {
 
 async function getCurrentUsdRate (currencyCode: string) {
   let usdRate = await queryCoinCap(currencyCode)
-  if (!usdRate || usdRate === '') {
-    usdRate = await getFiatRate(currencyCode, 'USD')
+  if (!usdRate) {
+    usdRate = await getFiatRate('USD', currencyCode)
   }
 
-  if (!usdRate || usdRate === '') {
+  if (!usdRate) {
     return '0'
   } else {
     return usdRate

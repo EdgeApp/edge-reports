@@ -20,35 +20,35 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
   const rCha = await doChangelly(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doChangelly failed')
     return {}
   })
   const rFaa = await doFaast(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doFaast failed')
     return {}
   })
   const rSsh = await doShapeShift(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doShapeShift failed')
     return {}
   })
   const rLbx = await doLibertyX(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doLibertyX failed')
     return {}
   })
   const rBit = await doBitrefill(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doBitrefill failed')
     return {}
   })
   const rFox = await doFox(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doFox failed')
     return {}
   })
   const rTl = await doTotle(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doTotle failed')
     return {}
   })
   const rCs = await doCoinswitch(swapFuncParams).catch(e => {
-    console.error('doChangenow failed')
+    console.error('doCoinswitch failed')
     return {}
   })
   const rMnp = await doMoonpay(swapFuncParams).catch(e => {
@@ -138,19 +138,28 @@ async function doSummaryFunction (
     useCache: false,
     interval: 'month',
     endDate: '2018-01'
+  }).catch(e => {
+    console.error('doSummaryFunction (monthly) failed')
+    return {}
   })
 
   // console.log('**************************************************')
   let end = Date.now() - 1000 * 60 * 60 * 24 * 60 // 60 days back
   let endDate = makeDate(end)
   // console.log(`******* Daily until ${endDate}`)
-  out.daily = await doFunction({ useCache: true, interval: 'day', endDate })
+  out.daily = await doFunction({ useCache: true, interval: 'day', endDate }).catch(e => {
+    console.error('doSummaryFunction (daily) failed')
+    return {}
+  })
 
   // console.log('**************************************************')
   end = Date.now() - 1000 * 60 * 60 * 24 * 2 // 2 days back
   endDate = makeDate(end)
   // console.log(`******* Hourly until ${endDate}`)
-  out.hourly = await doFunction({ useCache: true, interval: 'hour', endDate })
+  out.hourly = await doFunction({ useCache: true, interval: 'hour', endDate }).catch(e => {
+    console.error('doSummaryFunction (hourly) failed')
+    return {}
+  })
   return out
 }
 
