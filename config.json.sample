@@ -29,6 +29,9 @@
     "apiKey": "xxx"
   },
   "moonpayApiKey": "xxx",
+  "wyre": {
+    "periscopeClientKey": "xxx"
+  },
   "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"],
   "coinApiExcludeLookup": ["USD", "EUR", "GBP"]
 }
