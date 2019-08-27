@@ -10,6 +10,7 @@ const { doFox } = require('./fox.js')
 const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
 const { doMoonpay } = require('./moonpay.js')
+const { doWyre } = require('./wyre.js')
 const { sprintf } = require('sprintf-js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
@@ -55,6 +56,10 @@ async function main (swapFuncParams: SwapFuncParams) {
     console.error('doMoonpay failed')
     return {}
   })
+  const rWyr = await doWyre(swapFuncParams).catch(e => {
+    console.error('doWyre failed')
+    return {}
+  })
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -65,6 +70,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('FOX', rFox)
   printTxDataMap('CS', rCs)
   printTxDataMap('MNP', rMnp)
+  printTxDataMap('WYR', rWyr)
   console.log(new Date(Date.now()))
 }
 
@@ -225,6 +231,7 @@ async function report (argv: Array<any>) {
     const mnpResults = config.moonpayApiKey
       ? await doSummaryFunction(doMoonpay)
       : {}
+    const wyrResults = await doSummaryFunction(doWyre)
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -265,6 +272,10 @@ async function report (argv: Array<any>) {
     printTxDataMap('MNP', mnpResults.monthly)
     console.log('\n***** Moonpay Daily *****')
     printTxDataMap('MNP', mnpResults.daily)
+    console.log('\n***** Wyre Monthly *****')
+    printTxDataMap('WYR', wyrResults.monthly)
+    console.log('\n***** Wyre Daily *****')
+    printTxDataMap('WYR', wyrResults.daily)
 
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
@@ -275,6 +286,7 @@ async function report (argv: Array<any>) {
     combineResults(results, lxResults)
     combineResults(results, btResults)
     combineResults(results, mnpResults)
+    combineResults(results, wyrResults)
 
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
