@@ -11,10 +11,11 @@ const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
 const { doMoonpay } = require('./moonpay.js')
 const { doWyre } = require('./wyre.js')
-const { sprintf } = require('sprintf-js')
 const { doGodex } = require('./godex.js')
+const { doSafello } = require('./safello.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
+const { sprintf } = require('sprintf-js')
 
 async function main (swapFuncParams: SwapFuncParams) {
   const rChn = await doChangenow(swapFuncParams).catch(e => {
@@ -65,6 +66,10 @@ async function main (swapFuncParams: SwapFuncParams) {
     console.error('doWyre failed')
     return {}
   })
+  const rSaf = await doSafello(swapFuncParams).catch(e => {
+    console.error('doSafello failed')
+    return {}
+  })
 
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
@@ -78,6 +83,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('GDX', rGdx)
   printTxDataMap('MNP', rMnp)
   printTxDataMap('WYR', rWyr)
+  printTxDataMap('SAF', rSaf)
   console.log(new Date(Date.now()))
 }
 
@@ -248,6 +254,9 @@ async function report (argv: Array<any>) {
     const wyrResults = config.wyre && config.wyre.periscopeClientKey
       ? await doSummaryFunction(doWyre)
       : {}
+    const safResults = config.safello && config.safello.apiKey
+      ? await doSummaryFunction(doSafello)
+      : {}
 
     combineResults(results, cnResults)
     combineResults(results, chResults)
@@ -318,6 +327,11 @@ async function report (argv: Array<any>) {
     console.log('\n***** Wyre Daily *****')
     printTxDataMap('WYR', wyrResults.daily)
 
+    console.log('\n***** Safello Monthly *****')
+    printTxDataMap('SAF', safResults.monthly)
+    console.log('\n***** Safello Daily *****')
+    printTxDataMap('SAF', safResults.daily)
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -329,6 +343,7 @@ async function report (argv: Array<any>) {
     combineResults(results, btResults)
     combineResults(results, mnpResults)
     combineResults(results, wyrResults)
+    combineResults(results, safResults)
 
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
