@@ -163,7 +163,7 @@ async function doSummaryFunction (
   })
 
   // console.log('**************************************************')
-  let end = Date.now() - 1000 * 60 * 60 * 24 * 60 // 60 days back
+  let end = Date.now() - 1000 * 60 * 60 * 24 * 30 // 30 days back
   let endDate = makeDate(end)
   // console.log(`******* Daily until ${endDate}`)
   out.daily = await doFunction({ useCache: true, interval: 'day', endDate }).catch(e => {
@@ -172,7 +172,7 @@ async function doSummaryFunction (
   })
 
   // console.log('**************************************************')
-  end = Date.now() - 1000 * 60 * 60 * 24 * 2 // 2 days back
+  end = Date.now() - 1000 * 60 * 60 * 24 * 1 // 1 days back
   endDate = makeDate(end)
   // console.log(`******* Hourly until ${endDate}`)
   out.hourly = await doFunction({ useCache: true, interval: 'hour', endDate }).catch(e => {
