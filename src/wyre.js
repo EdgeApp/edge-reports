@@ -60,7 +60,10 @@ async function fetchWyre (swapFuncParams: SwapFuncParams) {
 
     for (const txStr of txs) {
       const tx = parseTxStr(txStr)
-      if (tx.status === 'COMPLETED') {
+      if (
+        tx.status === 'COMPLETED' &&
+        tx.sourceCurrency !== tx.destCurrency
+      ) {
         const date = new Date(tx.createdAt)
         const timestamp = date.getTime() / 1000
 
