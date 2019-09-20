@@ -11,6 +11,7 @@ const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
 const { doMoonpay } = require('./moonpay.js')
 const { doWyre } = require('./wyre.js')
+const { doBog } = require('./bitsOfGold.js')
 const { doGodex } = require('./godex.js')
 const { doSafello } = require('./safello.js')
 const { bns } = require('biggystring')
@@ -71,6 +72,11 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
 
+  const rBog = await doBog(swapFuncParams).catch(e => {
+    console.error('doBitsOfGold failed')
+    return {}
+  })
+
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -84,6 +90,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('MNP', rMnp)
   printTxDataMap('WYR', rWyr)
   printTxDataMap('SAF', rSaf)
+  printTxDataMap('BOG', rBog)
   console.log(new Date(Date.now()))
 }
 
@@ -163,7 +170,7 @@ async function doSummaryFunction (
   })
 
   // console.log('**************************************************')
-  let end = Date.now() - 1000 * 60 * 60 * 24 * 30 // 30 days back
+  let end = Date.now() - 1000 * 60 * 60 * 24 * 120 // 120 days back
   let endDate = makeDate(end)
   // console.log(`******* Daily until ${endDate}`)
   out.daily = await doFunction({ useCache: true, interval: 'day', endDate }).catch(e => {
@@ -257,6 +264,9 @@ async function report (argv: Array<any>) {
     const safResults = config.safello && config.safello.apiKey
       ? await doSummaryFunction(doSafello)
       : {}
+    const bogResults = config.bog && config.bog.apiKey
+      ? await doSummaryFunction(doBog)
+      : {}
 
     combineResults(results, cnResults)
     combineResults(results, chResults)
@@ -332,6 +342,11 @@ async function report (argv: Array<any>) {
     console.log('\n***** Safello Daily *****')
     printTxDataMap('SAF', safResults.daily)
 
+    console.log('\n***** Bits of Gold Monthly *****')
+    printTxDataMap('BOG', bogResults.monthly)
+    console.log('\n***** Bits of Gold Daily *****')
+    printTxDataMap('BOG', bogResults.daily)
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -344,6 +359,7 @@ async function report (argv: Array<any>) {
     combineResults(results, mnpResults)
     combineResults(results, wyrResults)
     combineResults(results, safResults)
+    combineResults(results, bogResults)
 
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
