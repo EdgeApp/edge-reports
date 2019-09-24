@@ -37,8 +37,6 @@ async function fetchBog (swapFuncParams: SwapFuncParams) {
   const safeEndTimestamp = endTimestamp - 24 * 60 * 60
   const startDate = new Date(safeStartTimestamp)
   const endDate = new Date(safeEndTimestamp)
-  // console.log('startDate: ', startDate)
-  // console.log('endDate: ', endDate)
   const startDayOfMonth = startDate.getDate()
   const endDayOfMonth = endDate.getDate()
   const formattedStartDate = `${startDayOfMonth}-${startDate.getMonth() + 1}-${startDate.getFullYear()}`
@@ -47,7 +45,6 @@ async function fetchBog (swapFuncParams: SwapFuncParams) {
 
   if (!swapFuncParams.useCache && isConfigValid) {
     const url = `http://webapi.bitsofgold.co.il/v1/sells/by_provider/?provider=${BITS_OF_GOLD_API_KEY}&filter%5Bcreated_at_gteq%5D=%27${formattedStartDate}%27&filter%5Bcreated_at_lt%5D=%27${formattedEndDate}`
-    console.log('url is: ', url)
     const result = await fetch(url, {
       method: 'GET'
     })
