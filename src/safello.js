@@ -8,7 +8,7 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const SAFELLO_CACHE = './cache/safRaw.json'
 
-const safelloSecretKey = config.safello.apiKey
+const safelloSecretKey = config.safello ? config.safello.apiKey : ''
 
 async function doSafello (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchSafello,
