@@ -221,6 +221,8 @@ async function report (argv: Array<any>) {
 
   if (doSummary) {
     const results: { [string]: TxDataMap } = {}
+    const fiatResults: { [string]: TxDataMap } = {}
+
     // swaps (crypto-to-crypto)
     const cnResults = config.changenowApiKey
       ? await doSummaryFunction(doChangenow)
@@ -354,12 +356,19 @@ async function report (argv: Array<any>) {
     console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
 
-    combineResults(results, lxResults)
-    combineResults(results, btResults)
-    combineResults(results, mnpResults)
-    combineResults(results, wyrResults)
-    combineResults(results, safResults)
-    combineResults(results, bogResults)
+    combineResults(fiatResults, lxResults)
+    combineResults(fiatResults, btResults)
+    combineResults(fiatResults, mnpResults)
+    combineResults(fiatResults, wyrResults)
+    combineResults(fiatResults, safResults)
+    combineResults(fiatResults, bogResults)
+
+    console.log('\n***** Fiat Totals Monthly *****')
+    printTxDataMap('TTF', fiatResults.monthly)
+    console.log('\n***** Fiat Totals Daily *****')
+    printTxDataMap('TTF', fiatResults.daily)
+
+    combineResults(results, fiatResults)
 
     console.log('\n***** Grand Totals Monthly *****')
     printTxDataMap('TTL', results.monthly)
