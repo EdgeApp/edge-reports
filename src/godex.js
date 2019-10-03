@@ -35,7 +35,10 @@ async function fetchGodex (swapFuncParams: SwapFuncParams) {
   let offset = diskCache.offset ? diskCache.offset : 0
   while (1 && !swapFuncParams.useCache) {
     const limit = 100
-    const url = `https://api.godex.io/api/v1/affiliate/history?limit=${limit}&offset=${offset}`
+    // use a safe offset since incomplete transactions don't count
+    // but may eventually become "completed"
+    const safeOffset = 0 || Math.abs(offset - 200)
+    const url = `https://api.godex.io/api/v1/affiliate/history?limit=${limit}&offset=${safeOffset}`
     const result = await fetch(url, {
       method: 'GET',
       headers
