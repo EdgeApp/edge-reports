@@ -14,6 +14,7 @@ const { doWyre } = require('./wyre.js')
 const { doBog } = require('./bitsOfGold.js')
 const { doGodex } = require('./godex.js')
 const { doSafello } = require('./safello.js')
+const { doSimplex } = require('./simplex.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
@@ -77,6 +78,11 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
 
+  const rSim = await doSimplex(swapFuncParams).catch(e => {
+    console.error('doSimplex failed')
+    return {}
+  })
+
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -91,6 +97,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('WYR', rWyr)
   printTxDataMap('SAF', rSaf)
   printTxDataMap('BOG', rBog)
+  printTxDataMap('SIM', rSim)
   console.log(new Date(Date.now()))
 }
 
@@ -270,6 +277,8 @@ async function report (argv: Array<any>) {
       ? await doSummaryFunction(doBog)
       : {}
 
+    const simResults = await doSummaryFunction(doSimplex)
+
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -349,6 +358,11 @@ async function report (argv: Array<any>) {
     console.log('\n***** Bits of Gold Daily *****')
     printTxDataMap('BOG', bogResults.daily)
 
+    console.log('\n***** Simplex Monthly *****')
+    printTxDataMap('SIM', simResults.monthly)
+    console.log('\n***** Simplex Daily *****')
+    printTxDataMap('SIM', simResults.daily)
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -362,6 +376,7 @@ async function report (argv: Array<any>) {
     combineResults(fiatResults, wyrResults)
     combineResults(fiatResults, safResults)
     combineResults(fiatResults, bogResults)
+    combineResults(fiatResults, simResults)
 
     console.log('\n***** Fiat Totals Monthly *****')
     printTxDataMap('TTF', fiatResults.monthly)
