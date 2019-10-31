@@ -101,6 +101,10 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
   const isApiKeyConfigured = config.coinMarketCapAPiKey
   const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
 
+  if (currencyCode === 'USDT20' || currencyCode === 'USDTERC20') {
+    currencyCode = 'USDT'
+  }
+  
   if (
     soonerThan90Days &&
     isApiKeyConfigured &&
