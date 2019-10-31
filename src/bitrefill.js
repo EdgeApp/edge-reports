@@ -74,7 +74,7 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
           typeof tx.coinCurrency === 'string' &&
           tx.coinCurrency.toUpperCase() !== 'BTC'
         ) {
-          const inputAmountStr = bns.div(tx.payment.altcoinPrice, '1', 8)
+          const inputAmountStr = bns.div(tx.altcoinPrice.toString(), '1', 8)
           inputAmount = Number(inputAmountStr)
           inputCurrency = tx.coinCurrency.toUpperCase()
         } else {
@@ -97,7 +97,7 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
           inputAmount,
           outputAddress: '',
           outputCurrency: 'USD',
-          outputAmount: tx.usdPrice,
+          outputAmount: tx.usdPrice.toString(),
           timestamp
         }
         ssFormatTxs.push(ssTx)
