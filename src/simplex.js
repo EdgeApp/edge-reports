@@ -33,6 +33,9 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
     const csvData = await csv().fromFile(filePath)
 
     for (const order of csvData) {
+      if (!order.total_amount_usd || !order.total_amount_crypto) {
+        continue
+      }
       const date = new Date(order.processed_at_utc)
       const timestamp = date.getTime() / 1000
       const uniqueIdentifier = `${timestamp}-${order.total_amount_crypto.replace('.', '')}`
