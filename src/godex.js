@@ -32,9 +32,11 @@ async function fetchGodex (swapFuncParams: SwapFuncParams) {
   }
 
   const ssFormatTxs: Array<StandardTx> = []
-  let offset = diskCache.offset ? diskCache.offset : 0
+//  let offset = diskCache.offset ? diskCache.offset : 0
+  let offset = 0
+  const limit = 500
   while (1 && !swapFuncParams.useCache) {
-    const limit = 100
+    console.log(`Querying offset ${offset}`)
     const url = `https://api.godex.io/api/v1/affiliate/history?limit=${limit}&offset=${offset}`
     const result = await fetch(url, {
       method: 'GET',
@@ -67,14 +69,17 @@ async function fetchGodex (swapFuncParams: SwapFuncParams) {
     // console.log('ssFormatTxs')
     // console.log(ssFormatTxs)
 
-    if (txs.length < 100) {
+    if (txs.length < limit) {
       break
     }
 
+    if (offset > 1500) {
+      break
+    }
     // console.log(`Godex completed: ${ssFormatTxs.length}`)
-    offset += 100
+    offset += limit
   }
-  diskCache.offset = offset
+  // diskCache.offset = offset - limit
   const out = {
     diskCache,
     newTransactions: ssFormatTxs
