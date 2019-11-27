@@ -372,9 +372,9 @@ async function report (argv: Array<any>) {
     printTxDataMap('SIM', simResults.daily)
 
     console.log('\n***** Banxa Monthly *****')
-    printTxDataMap('SIM', banResults.monthly)
+    printTxDataMap('BAN', banResults.monthly)
     console.log('\n***** Banxa Daily *****')
-    printTxDataMap('SIM', banResults.daily)
+    printTxDataMap('BAN', banResults.daily)
 
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
