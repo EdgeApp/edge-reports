@@ -34,13 +34,11 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
   let diskCache = {offset: 0, txs: []}
   try {
     diskCache = js.readFileSync(TOTLE_CACHE)
-  } catch (e) {
-  }
-  const cachedTransactions = diskCache.txs
+  } catch (e) { }
   // note that offset is the last Ethereum BLOCK, not page
   const offset = diskCache.offset ? diskCache.offset : 7000000
   const currentBlockNumber = await web3.eth.getBlockNumber()
-  console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
+  // console.log(`Read txs from cache: ${cachedTransactions.length} offset:${offset}`)
   const ssFormatTxs: Array<StandardTx> = []
 
   try {

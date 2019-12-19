@@ -35,7 +35,7 @@ async function fetchCoinswitch (swapFuncParams: SwapFuncParams) {
       }
       const response = await fetch(url, {method: 'GET', headers: headers})
       const txs = await response.json()
-      console.log(`Coinswitch: start:${start} count:${txs.data.items.length}`)
+      // console.log(`Coinswitch: start:${start} count:${txs.data.items.length}`)
 
       for (const tx of txs.data.items) {
         const ssTx: StandardTx = {

@@ -32,7 +32,7 @@ async function fetchShapeShift (swapFuncParams: SwapFuncParams) {
   let page = 0
 
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying shapeshift... page ${page}`)
+    // console.log(`Querying shapeshift... page ${page}`)
     try {
       const request = `https://shapeshift.io/client/transactions?limit=500&sort=DESC&page=${page}`
       const options = {

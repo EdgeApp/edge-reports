@@ -36,7 +36,7 @@ async function fetchGodex (swapFuncParams: SwapFuncParams) {
   let offset = 0
   const limit = 500
   while (1 && !swapFuncParams.useCache) {
-    console.log(`Querying offset ${offset}`)
+    // console.log(`Querying offset ${offset}`)
     const url = `https://api.godex.io/api/v1/affiliate/history?limit=${limit}&offset=${offset}`
     const result = await fetch(url, {
       method: 'GET',

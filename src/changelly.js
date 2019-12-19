@@ -72,7 +72,7 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
       undefined,
       undefined
     )
-    console.log(`Changelly: offset:${offset} count:${result.result.length}`)
+    // console.log(`Changelly: offset:${offset} count:${result.result.length}`)
 
     for (const tx of result.result) {
       if (tx.status === 'finished') {
