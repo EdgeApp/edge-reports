@@ -1,5 +1,6 @@
 // @flow
 import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
+const js = require('jsonfile')
 const fs = require('fs')
 const { checkSwapService } = require('./checkSwapService.js')
 const csv = require('csvtojson')
@@ -19,7 +20,11 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
     console.log('Fetching Banxa from CSV...')
   }
-  const diskCache = { txs: [] }
+  let diskCache = { txs: [] }
+
+  try {
+    diskCache = js.readFileSync(BANXA_CACHE)
+  } catch (e) {}
 
   const transactionMap = {}
   const ssFormatTxs: Array<StandardTx> = []

@@ -1,5 +1,6 @@
 // @flow
 import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
+const js = require('jsonfile')
 const fs = require('fs')
 const { checkSwapService } = require('./checkSwapService.js')
 const csv = require('csvtojson')
@@ -19,10 +20,14 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
     console.log('Fetching Simplex from CSV...')
   }
-  const diskCache = { txs: [] }
+  let diskCache = { txs: [] }
 
   const transactionMap = {}
   const ssFormatTxs: Array<StandardTx> = []
+
+  try {
+    diskCache = js.readFileSync(SIMPLEX_CACHE)
+  } catch (e) {}
 
   const files = await fs.readdirSync(SIMPLEX_FOLDER)
   // console.log('files: ', files)
