@@ -104,7 +104,7 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
   if (currencyCode === 'USDT20' || currencyCode === 'USDTERC20') {
     currencyCode = 'USDT'
   }
-  
+
   if (
     soonerThan90Days &&
     isApiKeyConfigured &&

@@ -16,6 +16,7 @@ const { doGodex } = require('./godex.js')
 const { doSafello } = require('./safello.js')
 const { doSimplex } = require('./simplex.js')
 const { doBanxa } = require('./banxa.js')
+const { doBity } = require('./bity.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
@@ -89,6 +90,11 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
 
+  const rBity = await doBity(swapFuncParams).catch(e => {
+    console.error('doBity failed')
+    return {}
+  })
+
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -105,6 +111,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('BOG', rBog)
   printTxDataMap('SIM', rSim)
   printTxDataMap('BAN', rBan)
+  printTxDataMap('BITY', rBity)
   console.log(new Date(Date.now()))
 }
 
@@ -286,6 +293,7 @@ async function report (argv: Array<any>) {
 
     const simResults = await doSummaryFunction(doSimplex)
     const banResults = await doSummaryFunction(doBanxa)
+    const bityResults = await doSummaryFunction(doBity)
 
     combineResults(results, cnResults)
     combineResults(results, chResults)
@@ -376,6 +384,11 @@ async function report (argv: Array<any>) {
     console.log('\n***** Banxa Daily *****')
     printTxDataMap('BAN', banResults.daily)
 
+    console.log('\n***** Bity Monthly *****')
+    printTxDataMap('BITY', bityResults.monthly)
+    console.log('\n***** Bity Daily *****')
+    printTxDataMap('BITY', bityResults.daily)
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -391,6 +404,7 @@ async function report (argv: Array<any>) {
     combineResults(fiatResults, bogResults)
     combineResults(fiatResults, simResults)
     combineResults(fiatResults, banResults)
+    combineResults(fiatResults, bityResults)
 
     console.log('\n***** Fiat Totals Monthly *****')
     printTxDataMap('TTF', fiatResults.monthly)
