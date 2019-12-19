@@ -32,7 +32,7 @@ async function fetchGodex (swapFuncParams: SwapFuncParams) {
   }
 
   const ssFormatTxs: Array<StandardTx> = []
-//  let offset = diskCache.offset ? diskCache.offset : 0
+  //  let offset = diskCache.offset ? diskCache.offset : 0
   let offset = 0
   const limit = 500
   while (1 && !swapFuncParams.useCache) {
