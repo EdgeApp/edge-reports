@@ -10,6 +10,7 @@ const jsonFormat = require('json-format')
 const coinMarketCapExcludeLookup = config.coinMarketCapExcludeLookup || []
 const coinApiExcludeLookup = config.coinApiExcludeLookup || []
 const COINAPI_RATE_PAIR_ERROR = 'COINAPI_RATE_PAIR_ERROR'
+const rateFile = './cache/ratePairs.json'
 
 export type TxData = {
   txCount: number,
@@ -195,6 +196,10 @@ async function checkSwapService (
   diskCache.txs = cachedTransactions
   // write new list of tx to cache / disk
   const out = jsonFormat(diskCache, jsonConfig)
+  if (!fs.existsSync(cacheFile)) {
+    const stream = fs.createWriteStream(cacheFile)
+    stream.end()
+  }
   fs.writeFileSync(cacheFile, out)
 
   const txDataMap: { [date: string]: TxData } = {}
@@ -318,7 +323,7 @@ async function checkSwapService (
 function queryRatePairs (currencyCode: string, date: string) {
   if (!ratesLoaded) {
     try {
-      ratePairs = js.readFileSync('./cache/ratePairs.json')
+      ratePairs = js.readFileSync(rateFile)
     } catch (e) {
       console.log(e)
       return ''
@@ -339,7 +344,11 @@ function updateRatePairs (currencyCode: string, date: string, usdRate: string) {
 
   if (!ratePairs[date][currencyCode]) {
     ratePairs[date][currencyCode] = usdRate
-    js.writeFileSync('./cache/ratePairs.json', ratePairs)
+    if (!fs.existsSync(rateFile)) {
+      const stream = fs.createWriteStream(rateFile)
+      stream.end()
+    }
+    js.writeFileSync(rateFile, ratePairs)
   }
 }
 

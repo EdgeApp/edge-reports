@@ -251,7 +251,7 @@ async function report (argv: Array<any>) {
     const chResults = config.changellyApiKey
       ? await doSummaryFunction(doChangelly)
       : {}
-    const ssResults = config.shapeShiftApiKey
+    const ssResults = config.shapeShiftToken
       ? await doSummaryFunction(doShapeShift)
       : {}
     const faResults = config.faastAffiliateId
