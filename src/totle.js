@@ -78,7 +78,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
             inputTXID: receipt.transactionHash,
             inputAddress: receipt.from,
             inputCurrency: sourceToken.symbol,
-            inputAmount: parseInt(bns.div(sourceAmount.toString(), (10 ** sourceToken.decimals).toString())),
+            inputAmount: parseFloat(bns.div(sourceAmount.toString(), (10 ** sourceToken.decimals).toString())),
             outputAddress: receipt.from,
             outputCurrency: destinationToken.symbol,
             outputAmount: bns.div(destinationAmount.toString(), (10 ** destinationToken.decimals).toString()),
