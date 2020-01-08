@@ -74,8 +74,9 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
           typeof tx.coinCurrency === 'string' &&
           tx.coinCurrency.toUpperCase() !== 'BTC'
         ) {
-          const inputAmountStr = bns.div(tx.altcoinPrice.toString(), '1', 8)
-          inputAmount = Number(inputAmountStr)
+          let div
+          if (tx.coinCurrency.toUpperCase() === 'ETH' ? div = 1000000 : div = 100000000);
+          inputAmount = tx.receivedPaymentAltcoin / div
           inputCurrency = tx.coinCurrency.toUpperCase()
         } else {
           const inputAmountStr = bns.div(
