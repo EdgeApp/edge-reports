@@ -68,23 +68,28 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
         const date = new Date(tx.invoiceTime)
         const timestamp = date.getTime() / 1000
 
-        let inputAmount = 0
-        let inputCurrency = 'BTC'
-        if (
-          typeof tx.coinCurrency === 'string' &&
-          tx.coinCurrency.toUpperCase() !== 'BTC'
-        ) {
-          const inputAmountStr = bns.div(tx.altcoinPrice.toString(), '1', 8)
-          inputAmount = Number(inputAmountStr)
-          inputCurrency = tx.coinCurrency.toUpperCase()
-        } else {
-          const inputAmountStr = bns.div(
-            tx.satoshiPrice.toString(),
-            '100000000',
-            8
-          )
-          inputAmount = Number(inputAmountStr)
+        let inputAmount = tx.satoshiPrice
+        const inputCurrency = tx.coinCurrency.toUpperCase()
+        const div = {
+          BTC: '100000000',
+          ETH: '1000000',
+          LTC: '100000000',
+          DASH: '100000000',
+          DOGE: '100000000'
         }
+        if (!div[inputCurrency]) {
+          console.log(inputCurrency + ' has no div')
+          break
+        }
+        if (
+          typeof inputCurrency === 'string' &&
+          inputCurrency !== 'BTC'
+        ) {
+          inputAmount = tx.receivedPaymentAltcoin
+        }
+        const inputAmountStr = bns.div(inputAmount.toString(), div[inputCurrency], 8)
+        inputAmount = Number(inputAmountStr)
+
         let inputAddress = ''
         if (tx.payment) {
           inputAddress = tx.payment.address
