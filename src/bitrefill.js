@@ -87,7 +87,7 @@ async function fetchBitrefill (swapFuncParams: SwapFuncParams) {
         ) {
           inputAmount = tx.receivedPaymentAltcoin
         }
-        const inputAmountStr = bns.div(inputAmount.toString(), div[inputCurrency].toString(), 8)
+        const inputAmountStr = bns.div(inputAmount.toString(), div[inputCurrency], 8)
         inputAmount = Number(inputAmountStr)
 
         let inputAddress = ''
