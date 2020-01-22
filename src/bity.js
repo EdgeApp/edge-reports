@@ -36,7 +36,7 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
       if (!order.input.amount || !order.output.amount || !order.timestamp_executed) {
         continue
       }
-      const date = new Date(order.timestamp_executed)
+      const date = new Date(order.timestamp_executed + 'Z')
       const timestamp = date.getTime() / 1000
       const uniqueIdentifier = `${order.id}`
       const inputAmount = Number(order.input.amount)
@@ -52,7 +52,7 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
         outputAmount: outputAmount.toString(),
         timestamp: timestamp
       }
-      console.log('ssTx: ', ssTx)
+      // console.log('ssTx: ', ssTx)
       transactionMap[uniqueIdentifier] = ssTx
     }
   }

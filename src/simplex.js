@@ -41,7 +41,7 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
       if (!order.total_amount_usd || !order.total_amount_crypto) {
         continue
       }
-      const date = new Date(order.processed_at_utc)
+      const date = new Date(order.processed_at_utc + ':00.000Z')
       const timestamp = date.getTime() / 1000
       const uniqueIdentifier = `${timestamp}-${order.total_amount_crypto.replace('.', '')}`
       const ssTx: StandardTx = {
