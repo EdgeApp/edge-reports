@@ -57,15 +57,19 @@ function clearCache () {
 }
 
 async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
-  const currentTimestamp = Date.now()
-  const targetDate = new Date(date)
-  const targetTimestamp = targetDate.getTime()
+  if (currencyCode === 'BSV') {
+    currencyCode = 'BCHSV'
+  }
+
+  // const currentTimestamp = Date.now()
+  // const targetDate = new Date(date)
+  // const targetTimestamp = targetDate.getTime()
   // if less than 90 days old (cmc API restriction) <<== Is this true for CoinApi?
-  const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
+  // const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
   const isApiKeyConfigured = config.coinApiKey
   const isCurrencyExcluded = coinApiExcludeLookup.find(c => c === currencyCode.toUpperCase())
   if (
-    soonerThan90Days &&
+    // soonerThan90Days &&
     isApiKeyConfigured &&
     !isCurrencyExcluded
   ) {
@@ -77,7 +81,7 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
       if (response.status === 200) {
         const jsonObj = await response.json()
         if (!jsonObj.rate) {
-          return COINAPI_RATE_PAIR_ERROR
+          return ''
         }
         return jsonObj.rate.toString()
       } else {
@@ -360,10 +364,24 @@ async function getUsdRate (currencyCode: string, date: string) {
   if (!usdRate) {
     usdRate = await getCurrentUsdRate(currencyCode)
   }
+
   return usdRate
 }
 
+const WEEK_MS = 1000 * 60 * 60 * 24 * 7
+const USD_COINS = {
+  'USDT': true,
+  'DAI': true,
+  'SAI': true,
+  'GUSD': true,
+  'USDC': true,
+  'USDTERC20': true,
+  'USDT20': true
+}
+
 async function getHistoricalUsdRate (currencyCode: string, date: string) {
+  const datestamp = (new Date(date)).getTime()
+  const now = Date.now()
   let usdRate = queryRatePairs(currencyCode, date)
   if (usdRate !== COINAPI_RATE_PAIR_ERROR) {
     if (!usdRate) {
@@ -373,14 +391,17 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
       }
     }
 
+    if (!usdRate && USD_COINS[currencyCode]) {
+      usdRate = '1'
+    }
+
     if (usdRate && usdRate !== '') {
       updateRatePairs(currencyCode, date, usdRate)
-    } else {
+    } else if (now - datestamp > WEEK_MS) {
       // If currencyCode & date pair are NOT found in either CoinMarketCap nor CoinApi then
       //  mark it as being in 'error' in the ratePairs cache structure
       updateRatePairs(currencyCode, date, COINAPI_RATE_PAIR_ERROR)
     }
-
     return usdRate
   } else {
     return ''
