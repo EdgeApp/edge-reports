@@ -8,7 +8,7 @@ const config = js.readFileSync(confFileName)
 const {checkSwapService} = require('./checkSwapService.js')
 
 const GODEX_CACHE = './cache/gxRaw.json'
-const apiKey = config.godex.apiKey
+const apiKey = config.godex ? config.godex.apiKey : ''
 const headers = {
   Authorization: apiKey
 }
