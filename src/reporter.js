@@ -10,6 +10,7 @@ const { doFox } = require('./fox.js')
 const { doFaast } = require('./faast.js')
 const { doCoinswitch } = require('./coinswitch.js')
 const { doMoonpay } = require('./moonpay.js')
+const { doTransak } = require('./transak.js')
 const { doWyre } = require('./wyre.js')
 const { doBog } = require('./bitsOfGold.js')
 const { doGodex } = require('./godex.js')
@@ -24,6 +25,10 @@ const { sprintf } = require('sprintf-js')
 async function main (swapFuncParams: SwapFuncParams) {
   const rChn = await doChangenow(swapFuncParams).catch(e => {
     console.error('doChangenow failed')
+    return {}
+  })
+   const rTnk = await doTransak(swapFuncParams).catch(e => {
+    console.error('doTransak failed')
     return {}
   })
   const rCha = await doChangelly(swapFuncParams).catch(e => {
@@ -106,6 +111,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('CS', rCs)
   printTxDataMap('GDX', rGdx)
   printTxDataMap('MNP', rMnp)
+  printTxDataMap('TNK', rTnk)
   printTxDataMap('WYR', rWyr)
   printTxDataMap('SAF', rSaf)
   printTxDataMap('BOG', rBog)
@@ -281,6 +287,9 @@ async function report (argv: Array<any>) {
     const mnpResults = config.moonpayApiKey
       ? await doSummaryFunction(doMoonpay)
       : {}
+    const tnkResults = config.transak_api_secret
+      ? await doSummaryFunction(doTransak)
+      : {}
     const wyrResults = config.wyre && config.wyre.periscopeClientKey
       ? await doSummaryFunction(doWyre)
       : {}
@@ -359,6 +368,11 @@ async function report (argv: Array<any>) {
     console.log('\n***** Moonpay Daily *****')
     printTxDataMap('MNP', mnpResults.daily)
 
+    console.log('\n***** Transak Monthly *****')
+    printTxDataMap('TNK', tnkResults.monthly)
+    console.log('\n***** Transak Daily *****')
+    printTxDataMap('TNK', tnkResults.daily)
+
     console.log('\n***** Wyre Monthly *****')
     printTxDataMap('WYR', wyrResults.monthly)
     console.log('\n***** Wyre Daily *****')
@@ -399,6 +413,7 @@ async function report (argv: Array<any>) {
     combineResults(fiatResults, lxResults)
     combineResults(fiatResults, btResults)
     combineResults(fiatResults, mnpResults)
+    combineResults(fiatResults, tnkResults)
     combineResults(fiatResults, wyrResults)
     combineResults(fiatResults, safResults)
     combineResults(fiatResults, bogResults)
