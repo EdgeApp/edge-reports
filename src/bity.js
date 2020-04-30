@@ -10,6 +10,7 @@ const config = js.readFileSync(confFileName)
 const BITY_CACHE = './cache/bityRaw.json'
 const BITY_TOKEN_URL = 'https://connect.bity.com/oauth2/token'
 const BITY_API_URL = 'https://reporting.api.bity.com/exchange/v1/summary/monthly/'
+const PAGE_SIZE = 100
 
 async function doBity (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchBity,
@@ -28,12 +29,12 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
     console.log('Fetching Bity from JSON...')
   }
-  let diskCache = { txs: [] }
+  let diskCache = { txs: [], offset: {lastCheckedMonth: queryMonth, lastCheckedYear: queryYear} }
   try {
     diskCache = js.readFileSync(BITY_CACHE)
-    // First tx in diskCache is the most recent
-    queryMonth = new Date(diskCache.txs[0].timestamp * 1000).getMonth().toString()
-    queryYear = new Date(diskCache.txs[0].timestamp * 1000).getFullYear().toString()
+    // Get most recent query from cache and subtract a month
+    queryMonth = diskCache.offset.lastCheckedMonth
+    queryYear = diskCache.offset.lastCheckedYear
   } catch (e) {}
 
   // Get auth token
@@ -82,7 +83,7 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
         inputTXID: '',
         inputAddress: '',
         inputCurrency: tx.input.currency.toUpperCase(),
-        inputAmount: tx.input.amount,
+        inputAmount: parseFloat(tx.input.amount),
         outputAddress: '',
         outputCurrency: tx.output.currency.toUpperCase(),
         outputAmount: tx.output.amount.toString(),
@@ -91,9 +92,16 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
       newTransactions.push(ssTx)
     }
 
-    if (monthlyTxs.length < 100 && queryMonth === todayMonth && queryYear === todayYear) {
+    if (monthlyTxs.length < PAGE_SIZE && queryMonth === todayMonth && queryYear === todayYear) {
+      if (queryMonth === '1') {
+        diskCache.offset.lastCheckedMonth = '12'
+        diskCache.offset.lastCheckedYear = bns.sub(queryYear, '1')
+      } else {
+        diskCache.offset.lastCheckedMonth = bns.sub(queryMonth, '1')
+        diskCache.offset.lastCheckedYear = queryYear
+      }
       keepQuerying = false
-    } else if (monthlyTxs.length === 100) {
+    } else if (monthlyTxs.length === PAGE_SIZE) {
       page += 1
     } else {
       page = 1
