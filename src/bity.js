@@ -1,11 +1,16 @@
 // @flow
 import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
-const fs = require('fs')
+const bns = require('biggystring')
 const { checkSwapService } = require('./checkSwapService.js')
 const js = require('jsonfile')
+const fetch = require('node-fetch')
+const confFileName = './config.json'
+const config = js.readFileSync(confFileName)
 
 const BITY_CACHE = './cache/bityRaw.json'
-const BITY_FOLDER = './cache/bity'
+const BITY_TOKEN_URL = 'https://connect.bity.com/oauth2/token'
+const BITY_API_URL = 'https://reporting.api.bity.com/exchange/v1/summary/monthly/'
+const PAGE_SIZE = 100
 
 async function doBity (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchBity,
@@ -15,57 +20,103 @@ async function doBity (swapFuncParams: SwapFuncParams) {
   )
 }
 
+let queryYear = '2020'
+let queryMonth = '1'
+const todayMonth = bns.add(new Date().getMonth().toString(), '1')
+const todayYear = new Date().getFullYear().toString()
+
 async function fetchBity (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
     console.log('Fetching Bity from JSON...')
   }
-  const diskCache = { txs: [] }
+  let diskCache = { txs: [], offset: {lastCheckedMonth: queryMonth, lastCheckedYear: queryYear} }
+  try {
+    diskCache = js.readFileSync(BITY_CACHE)
+    // Get most recent query from cache and subtract a month
+    queryMonth = diskCache.offset.lastCheckedMonth
+    queryYear = diskCache.offset.lastCheckedYear
+  } catch (e) {}
 
-  const transactionMap = {}
-  const ssFormatTxs: Array<StandardTx> = []
+  // Get auth token
+  const credentials = {
+    'grant_type': 'client_credentials',
+    scope: 'https://auth.bity.com/scopes/reporting.exchange',
+    client_id: config.bity.clientId,
+    client_secret: config.bity.clientSecret
+  }
 
-  const files = await fs.readdirSync(BITY_FOLDER)
-  // console.log('files: ', files)
+  const tokenParams = Object.keys(credentials).map((key) => {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(credentials[key])
+  }).join('&')
 
-  for (const fileName of files) {
-    const filePath = `./cache/bity/${fileName}`
-    // console.log('filePath is: ', filePath)
-    const jsonData = js.readFileSync(filePath)
+  const tokenResponse = await fetch(BITY_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: tokenParams
+  })
+  const tokenReply = await tokenResponse.json()
+  const authToken = tokenReply.access_token
 
-    for (const order of jsonData.orders) {
-      if (!order.input.amount || !order.output.amount || !order.timestamp_executed) {
-        continue
+  // Query monthly orders
+  const newTransactions = []
+
+  let keepQuerying = true
+  let page = 1
+
+  while (keepQuerying) {
+    const monthlyResponse = await fetch(`${BITY_API_URL}${queryYear}-${queryMonth}/orders?page=${page}`,
+      {
+        method: 'GET',
+        headers: {Authorization: `Bearer ${authToken}`}
       }
-      const date = new Date(order.timestamp_executed + 'Z')
+    )
+    const monthlyTxs = await monthlyResponse.json()
+
+    for (const tx of monthlyTxs) {
+      const date = new Date(tx.timestamp_executed)
       const timestamp = date.getTime() / 1000
-      const uniqueIdentifier = `${order.id}`
-      const inputAmount = Number(order.input.amount)
-      const outputAmount = Number(order.output.amount)
+
       const ssTx: StandardTx = {
         status: 'complete',
-        inputTXID: uniqueIdentifier,
+        inputTXID: '',
         inputAddress: '',
-        inputCurrency: order.input.currency,
-        inputAmount,
+        inputCurrency: tx.input.currency.toUpperCase(),
+        inputAmount: parseFloat(tx.input.amount),
         outputAddress: '',
-        outputCurrency: order.output.currency,
-        outputAmount: outputAmount.toString(),
-        timestamp: timestamp
+        outputCurrency: tx.output.currency.toUpperCase(),
+        outputAmount: tx.output.amount.toString(),
+        timestamp
       }
-      // console.log('ssTx: ', ssTx)
-      transactionMap[uniqueIdentifier] = ssTx
+      newTransactions.push(ssTx)
+    }
+
+    if (monthlyTxs.length < PAGE_SIZE && queryMonth === todayMonth && queryYear === todayYear) {
+      if (queryMonth === '1') {
+        diskCache.offset.lastCheckedMonth = '12'
+        diskCache.offset.lastCheckedYear = bns.sub(queryYear, '1')
+      } else {
+        diskCache.offset.lastCheckedMonth = bns.sub(queryMonth, '1')
+        diskCache.offset.lastCheckedYear = queryYear
+      }
+      keepQuerying = false
+    } else if (monthlyTxs.length === PAGE_SIZE) {
+      page += 1
+    } else {
+      page = 1
+      if (bns.lt(queryMonth, '12')) {
+        queryMonth = bns.add(queryMonth, '1')
+      } else {
+        queryMonth = '1'
+        queryYear = bns.add(queryYear, '1')
+      }
     }
   }
-  for (const id in transactionMap) {
-    ssFormatTxs.push(transactionMap[id])
-    ssFormatTxs.sort((a, b) => a.timestamp - b.timestamp)
-  }
-
-  // console.log('ssFormatTxs is: ', ssFormatTxs)
 
   const out = {
     diskCache,
-    newTransactions: ssFormatTxs
+    newTransactions
   }
   return out
 }
