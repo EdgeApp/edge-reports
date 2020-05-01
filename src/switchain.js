@@ -19,19 +19,16 @@ async function fetchSwitchain (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
     console.log('Fetching Switchain...')
   }
-  let diskCache = { txs: [], queryAll: true }
 
+  let diskCache = { txs: [], queryAll: true }
   try {
     diskCache = js.readFileSync(FILE_CACHE)
   } catch (e) {}
 
-  // const cachedTransactions = diskCache.txs
-  // console.log(`Read txs from cache: ${cachedTransactions.length}`)
   const newTransactions = []
   let page = 1
 
   while (1 && !swapFuncParams.useCache) {
-    // console.log(`Querying switchain...`)
     try {
       const request = `https://api.switchain.com/rest/v1/ordersinfo?limit=${PAGE_LIMIT}&page=${page}`
       const options = {
@@ -61,7 +58,6 @@ async function fetchSwitchain (swapFuncParams: SwapFuncParams) {
             timestamp
           }
           newTransactions.push(ssTx)
-          console.log('new tx', tx.depositTxId)
         }
       }
 
