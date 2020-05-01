@@ -17,6 +17,7 @@ const { doSafello } = require('./safello.js')
 const { doSimplex } = require('./simplex.js')
 const { doBanxa } = require('./banxa.js')
 const { doBity } = require('./bity.js')
+const { doSwitchain } = require('./switchain.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
@@ -95,6 +96,11 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
 
+  const rSwi = await doSwitchain(swapFuncParams).catch(e => {
+    console.error('doSwitchain failed')
+    return {}
+  })
+
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -112,6 +118,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('SIM', rSim)
   printTxDataMap('BAN', rBan)
   printTxDataMap('BITY', rBity)
+  printTxDataMap('SWI', rSwi)
   console.log(new Date(Date.now()))
 }
 
@@ -269,6 +276,9 @@ async function report (argv: Array<any>) {
       config.godex && config.godex.apiKey
         ? await doSummaryFunction(doGodex)
         : {}
+    const swResults =
+        config.switchainApiKey ? await doSummaryFunction(doSwitchain)
+          : {}
 
     // non-swap (crypto-to-fiat and vice-versa)
     const lxResults = config.libertyXApiKey
@@ -303,6 +313,7 @@ async function report (argv: Array<any>) {
     combineResults(results, foxResults)
     combineResults(results, csResults)
     combineResults(results, gxResults)
+    combineResults(results, swResults)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
@@ -343,6 +354,11 @@ async function report (argv: Array<any>) {
     printTxDataMap('GX', gxResults.daily)
     console.log('\n***** GoDex Monthly *****')
     printTxDataMap('GX', gxResults.monthly)
+
+    console.log('\n***** Switchain Daily *****')
+    printTxDataMap('SWI', swResults.daily)
+    console.log('\n***** Switchain Monthly *****')
+    printTxDataMap('SWI', swResults.monthly)
 
     console.log('\n***** Libertyx Daily *****')
     printTxDataMap('LBX', lxResults.daily)
