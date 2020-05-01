@@ -110,6 +110,14 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
     currencyCode = 'USDT'
   }
 
+  if (currencyCode === 'BCHABC') {
+    currencyCode = 'BCH'
+  }
+
+  if (currencyCode === 'BCHSV') {
+    currencyCode = 'BSV'
+  }
+
   if (
     soonerThan90Days &&
     isApiKeyConfigured &&
