@@ -31,7 +31,8 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
   }
   let diskCache = { txs: [], offset: {lastCheckedMonth: queryMonth, lastCheckedYear: queryYear} }
   try {
-    diskCache = js.readFileSync(BITY_CACHE)
+    const diskCacheOnDisk = js.readFileSync(BITY_CACHE)
+    diskCache = {...diskCache, ...diskCacheOnDisk}
     // Get most recent query from cache and subtract a month
     queryMonth = diskCache.offset.lastCheckedMonth
     queryYear = diskCache.offset.lastCheckedYear
