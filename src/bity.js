@@ -81,7 +81,7 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
 
       const ssTx: StandardTx = {
         status: 'complete',
-        inputTXID: '',
+        inputTXID: tx.id,
         inputAddress: '',
         inputCurrency: tx.input.currency.toUpperCase(),
         inputAmount: parseFloat(tx.input.amount),
