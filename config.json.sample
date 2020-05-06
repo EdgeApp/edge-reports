@@ -32,6 +32,11 @@
   "wyre": {
     "periscopeClientKey": "xxx"
   },
+  "bity": {
+    "clientId": "",
+    "clientSecret": ""
+  },
+  "switchainApiKey" : "",
   "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"],
   "coinApiExcludeLookup": ["USD", "EUR", "GBP"]
 }
