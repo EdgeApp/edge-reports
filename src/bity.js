@@ -76,9 +76,6 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
     const monthlyTxs = await monthlyResponse.json()
 
     for (const tx of monthlyTxs) {
-      const date = new Date(tx.timestamp_executed)
-      const timestamp = date.getTime() / 1000
-
       const ssTx: StandardTx = {
         status: 'complete',
         inputTXID: tx.id,
@@ -88,7 +85,7 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
         outputAddress: '',
         outputCurrency: tx.output.currency.toUpperCase(),
         outputAmount: tx.output.amount.toString(),
-        timestamp
+        timestamp: Date.parse(tx.timestamp_executed.concat('Z')) / 1000
       }
       newTransactions.push(ssTx)
     }
