@@ -97,6 +97,19 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
   }
 }
 
+function normalizeCurrencyCode (code: string) {
+  switch (code) {
+    case 'USDT20':
+    case 'USDTERC20':
+      return 'USDT'
+    case 'BCHABC':
+      return 'BCH'
+    case 'BCHSV':
+      return 'BSV'
+  }
+  return code
+}
+
 async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string) {
   const currentTimestamp = Date.now()
   const targetDate = new Date(date)
@@ -106,17 +119,7 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
   const isApiKeyConfigured = config.coinMarketCapAPiKey
   const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
 
-  if (currencyCode === 'USDT20' || currencyCode === 'USDTERC20') {
-    currencyCode = 'USDT'
-  }
-
-  if (currencyCode === 'BCHABC') {
-    currencyCode = 'BCH'
-  }
-
-  if (currencyCode === 'BCHSV') {
-    currencyCode = 'BSV'
-  }
+  currencyCode = normalizeCurrencyCode(currencyCode)
 
   if (
     soonerThan90Days &&
@@ -168,6 +171,8 @@ async function checkSwapService (
   let numAdded = 0
   const newTxsNoDupes = []
   for (const newTx of newTransactions) {
+    newTx.inputCurrency = normalizeCurrencyCode(newTx.inputCurrency)
+    newTx.outputCurrency = normalizeCurrencyCode(newTx.outputCurrency)
     let match = false
     // omit transactions that exist in the older pre-existing cache
     for (const oldTx of cachedTransactions) {
