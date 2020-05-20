@@ -28,7 +28,7 @@ async function main (swapFuncParams: SwapFuncParams) {
     console.error('doChangenow failed')
     return {}
   })
-   const rTnk = await doTransak(swapFuncParams).catch(e => {
+  const rTnk = await doTransak(swapFuncParams).catch(e => {
     console.error('doTransak failed')
     return {}
   })
