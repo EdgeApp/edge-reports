@@ -1,130 +1,130 @@
 // @flow
 import type { SwapFuncParams, TxDataMap } from './checkSwapService.js'
-// const { doShapeShift } = require('./shapeshift.js')
-// const { doChangelly } = require('./changelly.js')
-// const { doLibertyX } = require('./libertyx.js')
-// const { doChangenow } = require('./changenow.js')
-// const { doBitrefill } = require('./bitrefill.js')
-// const { doTotle } = require('./totle.js')
-// const { doFox } = require('./fox.js')
-// const { doFaast } = require('./faast.js')
-// const { doCoinswitch } = require('./coinswitch.js')
-// const { doMoonpay } = require('./moonpay.js')
-// const { doTransak } = require('./transak.js')
-// const { doWyre } = require('./wyre.js')
-// const { doBog } = require('./bitsOfGold.js')
-// const { doGodex } = require('./godex.js')
-// const { doSafello } = require('./safello.js')
+const { doShapeShift } = require('./shapeshift.js')
+const { doChangelly } = require('./changelly.js')
+const { doLibertyX } = require('./libertyx.js')
+const { doChangenow } = require('./changenow.js')
+const { doBitrefill } = require('./bitrefill.js')
+const { doTotle } = require('./totle.js')
+const { doFox } = require('./fox.js')
+const { doFaast } = require('./faast.js')
+const { doCoinswitch } = require('./coinswitch.js')
+const { doMoonpay } = require('./moonpay.js')
+const { doTransak } = require('./transak.js')
+const { doWyre } = require('./wyre.js')
+const { doBog } = require('./bitsOfGold.js')
+const { doGodex } = require('./godex.js')
+const { doSafello } = require('./safello.js')
 const { doSimplex } = require('./simplex.js')
-// const { doBanxa } = require('./banxa.js')
-// const { doBity } = require('./bity.js')
-// const { doSwitchain } = require('./switchain.js')
+const { doBanxa } = require('./banxa.js')
+const { doBity } = require('./bity.js')
+const { doSwitchain } = require('./switchain.js')
 const { bns } = require('biggystring')
-// const config = require('../config.json')
+const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
 
 async function main (swapFuncParams: SwapFuncParams) {
-  // const rChn = await doChangenow(swapFuncParams).catch(e => {
-  //   console.error('doChangenow failed')
-  //   return {}
-  // })
-  // const rTnk = await doTransak(swapFuncParams).catch(e => {
-  //   console.error('doTransak failed')
-  //   return {}
-  // })
-  // const rCha = await doChangelly(swapFuncParams).catch(e => {
-  //   console.error('doChangelly failed')
-  //   return {}
-  // })
-  // const rFaa = await doFaast(swapFuncParams).catch(e => {
-  //   console.error('doFaast failed')
-  //   return {}
-  // })
-  // const rSsh = await doShapeShift(swapFuncParams).catch(e => {
-  //   console.error('doShapeShift failed')
-  //   return {}
-  // })
-  // const rLbx = await doLibertyX(swapFuncParams).catch(e => {
-  //   console.error('doLibertyX failed')
-  //   return {}
-  // })
-  // const rBit = await doBitrefill(swapFuncParams).catch(e => {
-  //   console.error('doBitrefill failed')
-  //   return {}
-  // })
-  // const rFox = await doFox(swapFuncParams).catch(e => {
-  //   console.error('doFox failed')
-  //   return {}
-  // })
-  // const rTl = await doTotle(swapFuncParams).catch(e => {
-  //   console.error('doTotle failed')
-  //   return {}
-  // })
-  // const rCs = await doCoinswitch(swapFuncParams).catch(e => {
-  //   console.error('doCoinswitch failed')
-  //   return {}
-  // })
-  // const rGdx = await doGodex(swapFuncParams).catch(e => {
-  //   console.error('GoDex failed')
-  //   return {}
-  // })
-  // const rMnp = await doMoonpay(swapFuncParams).catch(e => {
-  //   console.error('doMoonpay failed')
-  //   return {}
-  // })
-  // const rWyr = await doWyre(swapFuncParams).catch(e => {
-  //   console.error('doWyre failed')
-  //   return {}
-  // })
-  // const rSaf = await doSafello(swapFuncParams).catch(e => {
-  //   console.error('doSafello failed')
-  //   return {}
-  // })
+  const rChn = await doChangenow(swapFuncParams).catch(e => {
+    console.error('doChangenow failed')
+    return {}
+  })
+  const rTnk = await doTransak(swapFuncParams).catch(e => {
+    console.error('doTransak failed')
+    return {}
+  })
+  const rCha = await doChangelly(swapFuncParams).catch(e => {
+    console.error('doChangelly failed')
+    return {}
+  })
+  const rFaa = await doFaast(swapFuncParams).catch(e => {
+    console.error('doFaast failed')
+    return {}
+  })
+  const rSsh = await doShapeShift(swapFuncParams).catch(e => {
+    console.error('doShapeShift failed')
+    return {}
+  })
+  const rLbx = await doLibertyX(swapFuncParams).catch(e => {
+    console.error('doLibertyX failed')
+    return {}
+  })
+  const rBit = await doBitrefill(swapFuncParams).catch(e => {
+    console.error('doBitrefill failed')
+    return {}
+  })
+  const rFox = await doFox(swapFuncParams).catch(e => {
+    console.error('doFox failed')
+    return {}
+  })
+  const rTl = await doTotle(swapFuncParams).catch(e => {
+    console.error('doTotle failed')
+    return {}
+  })
+  const rCs = await doCoinswitch(swapFuncParams).catch(e => {
+    console.error('doCoinswitch failed')
+    return {}
+  })
+  const rGdx = await doGodex(swapFuncParams).catch(e => {
+    console.error('GoDex failed')
+    return {}
+  })
+  const rMnp = await doMoonpay(swapFuncParams).catch(e => {
+    console.error('doMoonpay failed')
+    return {}
+  })
+  const rWyr = await doWyre(swapFuncParams).catch(e => {
+    console.error('doWyre failed')
+    return {}
+  })
+  const rSaf = await doSafello(swapFuncParams).catch(e => {
+    console.error('doSafello failed')
+    return {}
+  })
 
-  // const rBog = await doBog(swapFuncParams).catch(e => {
-  //   console.error('doBitsOfGold failed')
-  //   return {}
-  // })
+  const rBog = await doBog(swapFuncParams).catch(e => {
+    console.error('doBitsOfGold failed')
+    return {}
+  })
 
   const rSim = await doSimplex(swapFuncParams).catch(e => {
     console.error('doSimplex failed')
     return {}
   })
 
-  // const rBan = await doBanxa(swapFuncParams).catch(e => {
-  //   console.error('doBanxa failed')
-  //   return {}
-  // })
+  const rBan = await doBanxa(swapFuncParams).catch(e => {
+    console.error('doBanxa failed')
+    return {}
+  })
 
-  // const rBity = await doBity(swapFuncParams).catch(e => {
-  //   console.error('doBity failed')
-  //   return {}
-  // })
+  const rBity = await doBity(swapFuncParams).catch(e => {
+    console.error('doBity failed')
+    return {}
+  })
 
-  // const rSwi = await doSwitchain(swapFuncParams).catch(e => {
-  //   console.error('doSwitchain failed')
-  //   return {}
-  // })
+  const rSwi = await doSwitchain(swapFuncParams).catch(e => {
+    console.error('doSwitchain failed')
+    return {}
+  })
 
-  // printTxDataMap('CHN', rChn)
-  // printTxDataMap('CHA', rCha)
-  // printTxDataMap('FAA', rFaa)
-  // printTxDataMap('SSH', rSsh)
-  // printTxDataMap('LBX', rLbx)
-  // printTxDataMap('BIT', rBit)
-  // printTxDataMap('TOT', rTl)
-  // printTxDataMap('FOX', rFox)
-  // printTxDataMap('CS', rCs)
-  // printTxDataMap('GDX', rGdx)
-  // printTxDataMap('MNP', rMnp)
-  // printTxDataMap('TNK', rTnk)
-  // printTxDataMap('WYR', rWyr)
-  // printTxDataMap('SAF', rSaf)
-  // printTxDataMap('BOG', rBog)
+  printTxDataMap('CHN', rChn)
+  printTxDataMap('CHA', rCha)
+  printTxDataMap('FAA', rFaa)
+  printTxDataMap('SSH', rSsh)
+  printTxDataMap('LBX', rLbx)
+  printTxDataMap('BIT', rBit)
+  printTxDataMap('TOT', rTl)
+  printTxDataMap('FOX', rFox)
+  printTxDataMap('CS', rCs)
+  printTxDataMap('GDX', rGdx)
+  printTxDataMap('MNP', rMnp)
+  printTxDataMap('TNK', rTnk)
+  printTxDataMap('WYR', rWyr)
+  printTxDataMap('SAF', rSaf)
+  printTxDataMap('BOG', rBog)
   printTxDataMap('SIM', rSim)
-  // printTxDataMap('BAN', rBan)
-  // printTxDataMap('BITY', rBity)
-  // printTxDataMap('SWI', rSwi)
+  printTxDataMap('BAN', rBan)
+  printTxDataMap('BITY', rBity)
+  printTxDataMap('SWI', rSwi)
   console.log(new Date(Date.now()))
 }
 
@@ -258,166 +258,166 @@ async function report (argv: Array<any>) {
     const fiatResults: { [string]: TxDataMap } = {}
 
     // swaps (crypto-to-crypto)
-    // const cnResults = config.changenowApiKey
-    //   ? await doSummaryFunction(doChangenow)
-    //   : {}
-    // const chResults = config.changellyApiKey
-    //   ? await doSummaryFunction(doChangelly)
-    //   : {}
-    // const ssResults = config.shapeShiftToken
-    //   ? await doSummaryFunction(doShapeShift)
-    //   : {}
-    // const faResults = config.faastAffiliateId
-    //   ? await doSummaryFunction(doFaast)
-    //   : {}
-    // const tlResults = config.totleApiKey ? await doSummaryFunction(doTotle) : {}
-    // const foxResults = config.foxCredentials
-    //   ? await doSummaryFunction(doFox)
-    //   : {}
-    // const csResults =
-    //   config.coinswitch && config.coinswitch.apiKey
-    //     ? await doSummaryFunction(doCoinswitch)
-    //     : {}
-    // const gxResults =
-    //   config.godex && config.godex.apiKey
-    //     ? await doSummaryFunction(doGodex)
-    //     : {}
-    // const swResults =
-    //     config.switchainApiKey ? await doSummaryFunction(doSwitchain)
-    //       : {}
+    const cnResults = config.changenowApiKey
+      ? await doSummaryFunction(doChangenow)
+      : {}
+    const chResults = config.changellyApiKey
+      ? await doSummaryFunction(doChangelly)
+      : {}
+    const ssResults = config.shapeShiftToken
+      ? await doSummaryFunction(doShapeShift)
+      : {}
+    const faResults = config.faastAffiliateId
+      ? await doSummaryFunction(doFaast)
+      : {}
+    const tlResults = config.totleApiKey ? await doSummaryFunction(doTotle) : {}
+    const foxResults = config.foxCredentials
+      ? await doSummaryFunction(doFox)
+      : {}
+    const csResults =
+      config.coinswitch && config.coinswitch.apiKey
+        ? await doSummaryFunction(doCoinswitch)
+        : {}
+    const gxResults =
+      config.godex && config.godex.apiKey
+        ? await doSummaryFunction(doGodex)
+        : {}
+    const swResults =
+        config.switchainApiKey ? await doSummaryFunction(doSwitchain)
+          : {}
 
-    // // non-swap (crypto-to-fiat and vice-versa)
-    // const lxResults = config.libertyXApiKey
-    //   ? await doSummaryFunction(doLibertyX)
-    //   : {}
-    // const btResults =
-    //   config.bitrefillCredentials && config.bitrefillCredentials.apiKey
-    //     ? await doSummaryFunction(doBitrefill)
-    //     : {}
-    // const mnpResults = config.moonpayApiKey
-    //   ? await doSummaryFunction(doMoonpay)
-    //   : {}
-    // const tnkResults = config.transak_api_secret
-    //   ? await doSummaryFunction(doTransak)
-    //   : {}
-    // const wyrResults = config.wyre && config.wyre.periscopeClientKey
-    //   ? await doSummaryFunction(doWyre)
-    //   : {}
-    // const safResults = config.safello && config.safello.apiKey
-    //   ? await doSummaryFunction(doSafello)
-    //   : {}
-    // const bogResults = config.bog && config.bog.apiKey
-    //   ? await doSummaryFunction(doBog)
-    //   : {}
+    // non-swap (crypto-to-fiat and vice-versa)
+    const lxResults = config.libertyXApiKey
+      ? await doSummaryFunction(doLibertyX)
+      : {}
+    const btResults =
+      config.bitrefillCredentials && config.bitrefillCredentials.apiKey
+        ? await doSummaryFunction(doBitrefill)
+        : {}
+    const mnpResults = config.moonpayApiKey
+      ? await doSummaryFunction(doMoonpay)
+      : {}
+    const tnkResults = config.transak_api_secret
+      ? await doSummaryFunction(doTransak)
+      : {}
+    const wyrResults = config.wyre && config.wyre.periscopeClientKey
+      ? await doSummaryFunction(doWyre)
+      : {}
+    const safResults = config.safello && config.safello.apiKey
+      ? await doSummaryFunction(doSafello)
+      : {}
+    const bogResults = config.bog && config.bog.apiKey
+      ? await doSummaryFunction(doBog)
+      : {}
 
     const simResults = await doSummaryFunction(doSimplex)
-    // const banResults = await doSummaryFunction(doBanxa)
-    // const bityResults = await doSummaryFunction(doBity)
+    const banResults = await doSummaryFunction(doBanxa)
+    const bityResults = await doSummaryFunction(doBity)
 
-    // combineResults(results, cnResults)
-    // combineResults(results, chResults)
-    // combineResults(results, faResults)
-    // combineResults(results, ssResults)
-    // combineResults(results, tlResults)
-    // combineResults(results, foxResults)
-    // combineResults(results, csResults)
-    // combineResults(results, gxResults)
-    // combineResults(results, swResults)
+    combineResults(results, cnResults)
+    combineResults(results, chResults)
+    combineResults(results, faResults)
+    combineResults(results, ssResults)
+    combineResults(results, tlResults)
+    combineResults(results, foxResults)
+    combineResults(results, csResults)
+    combineResults(results, gxResults)
+    combineResults(results, swResults)
 
-    // console.log('\n***** Change NOW Daily *****')
-    // printTxDataMap('CHN', cnResults.daily)
-    // console.log('\n***** Change NOW monthly *****')
-    // printTxDataMap('CHN', cnResults.monthly)
+    console.log('\n***** Change NOW Daily *****')
+    printTxDataMap('CHN', cnResults.daily)
+    console.log('\n***** Change NOW monthly *****')
+    printTxDataMap('CHN', cnResults.monthly)
 
-    // console.log('\n***** Changelly Daily *****')
-    // printTxDataMap('CHA', chResults.daily)
-    // console.log('\n***** Changelly Monthly *****')
-    // printTxDataMap('CHA', chResults.monthly)
+    console.log('\n***** Changelly Daily *****')
+    printTxDataMap('CHA', chResults.daily)
+    console.log('\n***** Changelly Monthly *****')
+    printTxDataMap('CHA', chResults.monthly)
 
-    // console.log('\n***** Faast Daily *****')
-    // printTxDataMap('FAA', faResults.daily)
-    // console.log('\n***** Faast Monthly *****')
-    // printTxDataMap('FAA', faResults.monthly)
+    console.log('\n***** Faast Daily *****')
+    printTxDataMap('FAA', faResults.daily)
+    console.log('\n***** Faast Monthly *****')
+    printTxDataMap('FAA', faResults.monthly)
 
-    // console.log('\n***** fox.exchange Daily *****')
-    // printTxDataMap('FOX', foxResults.daily)
-    // console.log('\n***** fox.exchange Monthly *****')
-    // printTxDataMap('FOX', foxResults.monthly)
+    console.log('\n***** fox.exchange Daily *****')
+    printTxDataMap('FOX', foxResults.daily)
+    console.log('\n***** fox.exchange Monthly *****')
+    printTxDataMap('FOX', foxResults.monthly)
 
-    // console.log('\n***** Shapeshift Daily *****')
-    // printTxDataMap('SSH', ssResults.daily)
-    // console.log('\n***** Shapeshift Monthly *****')
-    // printTxDataMap('SSH', ssResults.monthly)
+    console.log('\n***** Shapeshift Daily *****')
+    printTxDataMap('SSH', ssResults.daily)
+    console.log('\n***** Shapeshift Monthly *****')
+    printTxDataMap('SSH', ssResults.monthly)
 
-    // console.log('\n***** Coinswitch Daily *****')
-    // printTxDataMap('CS', csResults.daily)
-    // console.log('\n***** Coinswitch Monthly *****')
-    // printTxDataMap('CS', csResults.monthly)
+    console.log('\n***** Coinswitch Daily *****')
+    printTxDataMap('CS', csResults.daily)
+    console.log('\n***** Coinswitch Monthly *****')
+    printTxDataMap('CS', csResults.monthly)
 
-    // console.log('\n***** Totle Daily *****')
-    // printTxDataMap('TOT', tlResults.daily)
-    // console.log('\n***** Totle Monthly *****')
-    // printTxDataMap('TOT', tlResults.monthly)
+    console.log('\n***** Totle Daily *****')
+    printTxDataMap('TOT', tlResults.daily)
+    console.log('\n***** Totle Monthly *****')
+    printTxDataMap('TOT', tlResults.monthly)
 
-    // console.log('\n***** GoDex Daily *****')
-    // printTxDataMap('GX', gxResults.daily)
-    // console.log('\n***** GoDex Monthly *****')
-    // printTxDataMap('GX', gxResults.monthly)
+    console.log('\n***** GoDex Daily *****')
+    printTxDataMap('GX', gxResults.daily)
+    console.log('\n***** GoDex Monthly *****')
+    printTxDataMap('GX', gxResults.monthly)
 
-    // console.log('\n***** Switchain Daily *****')
-    // printTxDataMap('SWI', swResults.daily)
-    // console.log('\n***** Switchain Monthly *****')
-    // printTxDataMap('SWI', swResults.monthly)
+    console.log('\n***** Switchain Daily *****')
+    printTxDataMap('SWI', swResults.daily)
+    console.log('\n***** Switchain Monthly *****')
+    printTxDataMap('SWI', swResults.monthly)
 
-    // console.log('\n***** Libertyx Daily *****')
-    // printTxDataMap('LBX', lxResults.daily)
-    // console.log('\n***** Libertyx Monthly *****')
-    // printTxDataMap('LBX', lxResults.monthly)
+    console.log('\n***** Libertyx Daily *****')
+    printTxDataMap('LBX', lxResults.daily)
+    console.log('\n***** Libertyx Monthly *****')
+    printTxDataMap('LBX', lxResults.monthly)
 
-    // console.log('\n***** Bitrefill Daily *****')
-    // printTxDataMap('BIT', btResults.daily)
-    // console.log('\n***** Bitrefill Monthly *****')
-    // printTxDataMap('BIT', btResults.monthly)
+    console.log('\n***** Bitrefill Daily *****')
+    printTxDataMap('BIT', btResults.daily)
+    console.log('\n***** Bitrefill Monthly *****')
+    printTxDataMap('BIT', btResults.monthly)
 
-    // console.log('\n***** Moonpay Monthly *****')
-    // printTxDataMap('MNP', mnpResults.monthly)
-    // console.log('\n***** Moonpay Daily *****')
-    // printTxDataMap('MNP', mnpResults.daily)
+    console.log('\n***** Moonpay Monthly *****')
+    printTxDataMap('MNP', mnpResults.monthly)
+    console.log('\n***** Moonpay Daily *****')
+    printTxDataMap('MNP', mnpResults.daily)
 
-    // console.log('\n***** Transak Monthly *****')
-    // printTxDataMap('TNK', tnkResults.monthly)
-    // console.log('\n***** Transak Daily *****')
-    // printTxDataMap('TNK', tnkResults.daily)
+    console.log('\n***** Transak Monthly *****')
+    printTxDataMap('TNK', tnkResults.monthly)
+    console.log('\n***** Transak Daily *****')
+    printTxDataMap('TNK', tnkResults.daily)
 
-    // console.log('\n***** Wyre Monthly *****')
-    // printTxDataMap('WYR', wyrResults.monthly)
-    // console.log('\n***** Wyre Daily *****')
-    // printTxDataMap('WYR', wyrResults.daily)
+    console.log('\n***** Wyre Monthly *****')
+    printTxDataMap('WYR', wyrResults.monthly)
+    console.log('\n***** Wyre Daily *****')
+    printTxDataMap('WYR', wyrResults.daily)
 
-    // console.log('\n***** Safello Monthly *****')
-    // printTxDataMap('SAF', safResults.monthly)
-    // console.log('\n***** Safello Daily *****')
-    // printTxDataMap('SAF', safResults.daily)
+    console.log('\n***** Safello Monthly *****')
+    printTxDataMap('SAF', safResults.monthly)
+    console.log('\n***** Safello Daily *****')
+    printTxDataMap('SAF', safResults.daily)
 
-    // console.log('\n***** Bits of Gold Monthly *****')
-    // printTxDataMap('BOG', bogResults.monthly)
-    // console.log('\n***** Bits of Gold Daily *****')
-    // printTxDataMap('BOG', bogResults.daily)
+    console.log('\n***** Bits of Gold Monthly *****')
+    printTxDataMap('BOG', bogResults.monthly)
+    console.log('\n***** Bits of Gold Daily *****')
+    printTxDataMap('BOG', bogResults.daily)
 
     console.log('\n***** Simplex Monthly *****')
     printTxDataMap('SIM', simResults.monthly)
     console.log('\n***** Simplex Daily *****')
     printTxDataMap('SIM', simResults.daily)
 
-    // console.log('\n***** Banxa Monthly *****')
-    // printTxDataMap('BAN', banResults.monthly)
-    // console.log('\n***** Banxa Daily *****')
-    // printTxDataMap('BAN', banResults.daily)
+    console.log('\n***** Banxa Monthly *****')
+    printTxDataMap('BAN', banResults.monthly)
+    console.log('\n***** Banxa Daily *****')
+    printTxDataMap('BAN', banResults.daily)
 
-    // console.log('\n***** Bity Monthly *****')
-    // printTxDataMap('BITY', bityResults.monthly)
-    // console.log('\n***** Bity Daily *****')
-    // printTxDataMap('BITY', bityResults.daily)
+    console.log('\n***** Bity Monthly *****')
+    printTxDataMap('BITY', bityResults.monthly)
+    console.log('\n***** Bity Daily *****')
+    printTxDataMap('BITY', bityResults.daily)
 
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
@@ -426,16 +426,16 @@ async function report (argv: Array<any>) {
     console.log('\n***** Swap Totals Hourly *****')
     printTxDataMap('TTS', results.hourly)
 
-    // combineResults(fiatResults, lxResults)
-    // combineResults(fiatResults, btResults)
-    // combineResults(fiatResults, mnpResults)
-    // combineResults(fiatResults, tnkResults)
-    // combineResults(fiatResults, wyrResults)
-    // combineResults(fiatResults, safResults)
-    // combineResults(fiatResults, bogResults)
+    combineResults(fiatResults, lxResults)
+    combineResults(fiatResults, btResults)
+    combineResults(fiatResults, mnpResults)
+    combineResults(fiatResults, tnkResults)
+    combineResults(fiatResults, wyrResults)
+    combineResults(fiatResults, safResults)
+    combineResults(fiatResults, bogResults)
     combineResults(fiatResults, simResults)
-    // combineResults(fiatResults, banResults)
-    // combineResults(fiatResults, bityResults)
+    combineResults(fiatResults, banResults)
+    combineResults(fiatResults, bityResults)
 
     console.log('\n***** Fiat Totals Monthly *****')
     printTxDataMap('TTF', fiatResults.monthly)
