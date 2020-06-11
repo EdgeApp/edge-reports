@@ -18,6 +18,8 @@
 
 <PROJECT_ROOT>/lib/.*.js.flow
 
+.*/node_modules/oboe/test/json/incomplete.json
+
 [include]
 
 [libs]
