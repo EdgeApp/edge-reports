@@ -30,7 +30,7 @@ async function fetchTransak (swapFuncParams: SwapFuncParams) {
   while (1 && !swapFuncParams.useCache) {
     let orders = []
 
-    const apiResponse = await fetch(`https://api.transak.com/api/v1/partners/orders/?partnerAPISecret=${config.transak_api_secret}?limit=${pageLimit}&skip=${offset}`)
+    const apiResponse = await fetch(`https://api.transak.com/api/v1/partners/orders/?partnerAPISecret=${config.transak_api_secret}&limit=${pageLimit}&skip=${offset}`)
     const ordersData = await apiResponse.json()
 
     if (ordersData && ordersData.response && ordersData.response.length) orders = ordersData.response
