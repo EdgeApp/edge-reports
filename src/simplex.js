@@ -83,10 +83,16 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
         }
         // 1567388220 = first transaction
         // console.log('timestamp: ', timestamp)
+        // if not fetching from scratch
         if (initialOffset) {
+          // then update minimum if timestamp lower than minimum
           if (timestamp < minTimestamp) minTimestamp = timestamp
         }
+        // if it's from scratch and this is first tx
+        // then set the minimum timestamp to current tx
         if (!initialOffset) minTimestamp = timestamp
+        // if timestamp is greater than max
+        // then set new max to current tx
         if (timestamp > maxTimestamp) maxTimestamp = timestamp
         offset = maxTimestamp
         // console.log('ssTx: ', ssTx)
@@ -94,6 +100,7 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
       }
       if (responseTxs.length < 1000) {
         console.log('responseTxs.length: ', responseTxs.length)
+        // set the offset for the cache to
         diskCache.offset = offset
         break
       }
