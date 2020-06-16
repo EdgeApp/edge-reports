@@ -32,10 +32,10 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
 
   // flag for fresh vs already-populated cache
   const initialOffset = diskCache.offset || 0
-  let offset = diskCache.offset || 0
-  let minTimestamp = initialOffset ? (initialOffset - 10) : 0
-  let maxTimestamp = 0
-  let offsetSyntax = ``
+  let maxTimestamp = diskCache.offset || 0
+  let continueFromSyntax = ''
+  let has_more_pages = false
+  let next_page_cursor = ''
 
   try {
     while (1 && !swapFuncParams.useCache) {
@@ -44,16 +44,8 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
       // console.log('offset: ', offset)
       // console.log('maxTimestamp: ', maxTimestamp)
       // console.log('minTimestamp: ', minTimestamp)
-      if (initialOffset) { // if continuing
-        offsetSyntax = `starting_at=${maxTimestamp}&`
-      } else { // if from fresh / empty tx set
-        if (offset === 0) { // if first time in loop
-          offsetSyntax = ''
-        } else { // otherwise
-          offsetSyntax = `ending_at=${minTimestamp}&`
-        }
-      }
-      const url = `https://turnkey.api.simplex.com/transactions?${offsetSyntax}limit=1000`
+      if (next_page_cursor) continueFromSyntax = `continue_from=${next_page_cursor}&`
+      const url = `https://turnkey.api.simplex.com/transactions?${continueFromSyntax}limit=1000`
       console.log('url: ', url)
       const csvData = await axios({
         url,
@@ -61,6 +53,9 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
           'X-API-KEY': CONFIG.simplex.apiKey
         }
       })
+
+      has_more_pages = csvData.data.has_more_pages
+      next_page_cursor = csvData.data.next_page_cursor
 
       const responseTxs = csvData.data.data
 
@@ -81,27 +76,22 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
           outputAmount: order.amount_crypto,
           timestamp: timestamp
         }
-        // 1567388220 = first transaction
-        // console.log('timestamp: ', timestamp)
-        // if not fetching from scratch
-        if (initialOffset) {
-          // then update minimum if timestamp lower than minimum
-          if (timestamp < minTimestamp) minTimestamp = timestamp
-        }
-        // if it's from scratch and this is first tx
-        // then set the minimum timestamp to current tx
-        if (!initialOffset) minTimestamp = timestamp
-        // if timestamp is greater than max
-        // then set new max to current tx
+
         if (timestamp > maxTimestamp) maxTimestamp = timestamp
-        offset = maxTimestamp
-        // console.log('ssTx: ', ssTx)
+
         transactionMap[uniqueIdentifier] = ssTx
+
+        // if transaction is before the cutoff timestamp
+        // then stop the loop
+
+        if (timestamp < initialOffset) {
+          has_more_pages = false
+        }
       }
-      if (responseTxs.length < 1000) {
+      if (has_more_pages === false) {
         console.log('responseTxs.length: ', responseTxs.length)
-        // set the offset for the cache to
-        diskCache.offset = offset
+        // set the offset for the cache to two weeks before latest tx
+        diskCache.offset = maxTimestamp - 60 * 60 * 24 * 14
         break
       }
     }
