@@ -20,7 +20,7 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
     console.log('Fetching Simplex...')
   }
-  let diskCache = { txs: [], offset: 0 }
+  let diskCache = { txs: [], lastTxTimestamp: 0 }
 
   const transactionMap = {}
   const ssFormatTxs: Array<StandardTx> = []
@@ -31,8 +31,8 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
   } catch (e) {}
 
   // flag for fresh vs already-populated cache
-  const initialOffset = diskCache.offset || 0
-  let maxTimestamp = diskCache.offset || 0
+  const initialLastTxTimestamp = diskCache.lastTxTimestamp || 0
+  let maxTimestamp = diskCache.lastTxTimestamp || 0
   let continueFromSyntax = ''
   let has_more_pages = false
   let next_page_cursor = ''
@@ -40,8 +40,8 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
   try {
     while (1 && !swapFuncParams.useCache) {
       // console.log('----------------')
-      // console.log('initialOffset: ', initialOffset)
-      // console.log('offset: ', offset)
+      // console.log('initiallastTxTimestamp: ', initiallastTxTimestamp)
+      // console.log('lastTxTimestamp: ', lastTxTimestamp)
       // console.log('maxTimestamp: ', maxTimestamp)
       // console.log('minTimestamp: ', minTimestamp)
       if (next_page_cursor) continueFromSyntax = `continue_from=${next_page_cursor}&`
@@ -84,14 +84,14 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
         // if transaction is before the cutoff timestamp
         // then stop the loop
 
-        if (timestamp < initialOffset) {
+        if (timestamp < initialLastTxTimestamp) {
           has_more_pages = false
         }
       }
       if (has_more_pages === false) {
         console.log('responseTxs.length: ', responseTxs.length)
-        // set the offset for the cache to two weeks before latest tx
-        diskCache.offset = maxTimestamp - 60 * 60 * 24 * 14
+        // set the lastTxTimestamp for the cache to two weeks before latest tx
+        diskCache.lastTxTimestamp = maxTimestamp - 60 * 60 * 24 * 7
         break
       }
     }
