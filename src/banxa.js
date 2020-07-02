@@ -35,7 +35,14 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
     const filePath = `./cache/banxa/${fileName}`
     const csvData = await csv().fromFile(filePath)
     for (const order of csvData) {
-      const date = new Date(order['Completed At (UTC)'])
+      let date
+      if (order['UTC Time']) {
+        date = new Date(order['UTC Time'])
+      } else if (order['Completed At (UTC)']) {
+        date = new Date(order['Completed At (UTC)'])
+      } else {
+        continue
+      }
       const timestamp = date.getTime() / 1000
       const uniqueIdentifier = order['Order Id']
       const ssTx: StandardTx = {
