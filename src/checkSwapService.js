@@ -97,14 +97,20 @@ async function queryCoinApiForUsdRate (currencyCode: string, date: string) {
   }
 }
 
-async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string) {
+async function queryCoinMarketCapForUsdRate (
+  currencyCode: string,
+  date: string
+) {
   const currentTimestamp = Date.now()
   const targetDate = new Date(date)
   const targetTimestamp = targetDate.getTime()
   // if less than 90 days old (cmc API restriction)
-  const soonerThan90Days = currentTimestamp - targetTimestamp < 89 * 86400 * 1000
+  const soonerThan90Days =
+    currentTimestamp - targetTimestamp < 89 * 86400 * 1000
   const isApiKeyConfigured = config.coinMarketCapAPiKey
-  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(c => c === currencyCode.toUpperCase())
+  const isCurrencyExcluded = coinMarketCapExcludeLookup.find(
+    (c) => c === currencyCode.toUpperCase()
+  )
 
   if (currencyCode === 'USDT20' || currencyCode === 'USDTERC20') {
     currencyCode = 'USDT'
@@ -118,11 +124,7 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
     currencyCode = 'BSV'
   }
 
-  if (
-    soonerThan90Days &&
-    isApiKeyConfigured &&
-    !isCurrencyExcluded
-  ) {
+  if (soonerThan90Days && isApiKeyConfigured && !isCurrencyExcluded) {
     const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical?symbol=${currencyCode}&time_end=${date}&count=1`
 
     let response
@@ -137,8 +139,17 @@ async function queryCoinMarketCapForUsdRate (currencyCode: string, date: string)
     try {
       response = await fetch(url, fetchOptions)
       const jsonObj = await response.json()
-      if (!jsonObj || !jsonObj.data || !jsonObj.data.quotes || !jsonObj.data.quotes[0] || !jsonObj.data.quotes[0].quote || !jsonObj.data.quotes[0].quote.USD) {
-        console.log(`No rate from CMC: ${currencyCode} date:${date} response.status:${response.status}`)
+      if (
+        !jsonObj ||
+        !jsonObj.data ||
+        !jsonObj.data.quotes ||
+        !jsonObj.data.quotes[0] ||
+        !jsonObj.data.quotes[0].quote ||
+        !jsonObj.data.quotes[0].quote.USD
+      ) {
+        console.log(
+          `No rate from CMC: ${currencyCode} date:${date} response.status:${response.status}`
+        )
         return ''
       }
       return jsonObj.data.quotes[0].quote.USD.price.toString()
@@ -394,9 +405,9 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
   if (usdRate !== COINAPI_RATE_PAIR_ERROR) {
     if (!usdRate) {
       usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
-      if (!usdRate) {
-        usdRate = await queryCoinApiForUsdRate(currencyCode, date)
-      }
+    if (!usdRate) {
+      usdRate = await queryCoinApiForUsdRate(currencyCode, date)
+    }
     }
 
     if (!usdRate && USD_COINS[currencyCode]) {
