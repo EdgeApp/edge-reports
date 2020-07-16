@@ -161,6 +161,49 @@ async function queryCoinMarketCapForUsdRate (
     return ''
   }
 }
+async function queryEdgeRatesForUsdRate (currencyCode: string, date: string) {
+  const targetDate = new Date(date)
+
+  if (currencyCode === 'USDT20' || currencyCode === 'USDTERC20') {
+    currencyCode = 'USDT'
+  }
+
+  if (currencyCode === 'BCHABC') {
+    currencyCode = 'BCH'
+  }
+
+  if (currencyCode === 'BCHSV') {
+    currencyCode = 'BSV'
+  }
+
+  {
+    const url = `https://rates1.edge.app/v1/exchangeRate?currency_pair=${currencyCode}_USD&date=${targetDate.toISOString()}`
+
+    let response
+    const fetchOptions = {
+      method: 'GET',
+      json: true
+    }
+
+    try {
+      response = await fetch(url, fetchOptions)
+      const jsonObj = await response.json()
+      if (
+        !jsonObj ||
+        !jsonObj.exchangeRate
+      ) {
+        console.log(
+          `No rate from rates.edge: ${url} response.status:${response.status}`
+        )
+        return ''
+      }
+      return jsonObj.exchangeRate
+    } catch (e) {
+      console.log(`No rates.edge ${url}`, e)
+      return ''
+    }
+  }
+}
 
 async function checkSwapService (
   theFetch: Function,
@@ -404,10 +447,13 @@ async function getHistoricalUsdRate (currencyCode: string, date: string) {
   let usdRate = queryRatePairs(currencyCode, date)
   if (usdRate !== COINAPI_RATE_PAIR_ERROR) {
     if (!usdRate) {
+      usdRate = await queryEdgeRatesForUsdRate(currencyCode, date)
+    }
+    if (!usdRate) {
       usdRate = await queryCoinMarketCapForUsdRate(currencyCode, date)
+    }
     if (!usdRate) {
       usdRate = await queryCoinApiForUsdRate(currencyCode, date)
-    }
     }
 
     if (!usdRate && USD_COINS[currencyCode]) {
