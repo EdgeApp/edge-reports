@@ -7,6 +7,7 @@ const { checkSwapService } = require('./checkSwapService.js')
 const axios = require('axios')
 
 const SIMPLEX_CACHE = './cache/simRaw.json'
+const API_START_DATE = new Date('2020-06-29T00:00:00.000Z').getTime() / 1000
 
 async function doSimplex (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchSimplex,
@@ -36,6 +37,7 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
   let continueFromSyntax = ''
   let has_more_pages = false
   let next_page_cursor = ''
+  let retry = 4
 
   try {
     while (1 && !swapFuncParams.useCache) {
@@ -45,14 +47,23 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
       // console.log('maxTimestamp: ', maxTimestamp)
       // console.log('minTimestamp: ', minTimestamp)
       if (next_page_cursor) continueFromSyntax = `continue_from=${next_page_cursor}&`
-      const url = `https://turnkey.api.simplex.com/transactions?${continueFromSyntax}limit=1000`
+      const url = `https://turnkey.api.simplex.com/transactions?${continueFromSyntax}limit=1000&starting_at=${initialLastTxTimestamp}`
       console.log('url: ', url)
       const csvData = await axios({
         url,
         headers: {
           'X-API-KEY': CONFIG.simplex.apiKey
         }
+      }).catch(e => {
+        if (!--retry) {
+          throw e
+        }
+        return null
       })
+
+      if (!csvData) {
+        continue
+      }
 
       has_more_pages = csvData.data.has_more_pages
       next_page_cursor = csvData.data.next_page_cursor
@@ -64,7 +75,11 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
           continue
         }
         const timestamp = order.created_at
-        const uniqueIdentifier = order.transaction_id
+        if (timestamp < API_START_DATE) {
+          continue
+        }
+
+        const uniqueIdentifier = order.order_id
         const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: uniqueIdentifier,
