@@ -50,66 +50,74 @@ async function fetchBity (swapFuncParams: SwapFuncParams) {
     return encodeURIComponent(key) + '=' + encodeURIComponent(credentials[key])
   }).join('&')
 
-  const tokenResponse = await fetch(BITY_TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: tokenParams
-  })
-  const tokenReply = await tokenResponse.json()
-  const authToken = tokenReply.access_token
-
-  // Query monthly orders
   const newTransactions = []
 
-  let keepQuerying = true
-  let page = 1
+  try {
+    const tokenResponse = await fetch(BITY_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: tokenParams
+    })
+    const tokenReply = await tokenResponse.json()
+    const authToken = tokenReply.access_token
 
-  while (keepQuerying) {
-    const monthlyResponse = await fetch(`${BITY_API_URL}${queryYear}-${queryMonth}/orders?page=${page}`,
-      {
-        method: 'GET',
-        headers: {Authorization: `Bearer ${authToken}`}
+    // Query monthly orders
+
+    let keepQuerying = true
+    let page = 1
+
+    while (keepQuerying) {
+      const monthlyResponse = await fetch(`${BITY_API_URL}${queryYear}-${queryMonth}/orders?page=${page}`,
+        {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${authToken}` }
+        }
+      )
+      let monthlyTxs = []
+      if (monthlyResponse.ok) {
+        monthlyTxs = await monthlyResponse.json().catch(e => [])
       }
-    )
-    const monthlyTxs = await monthlyResponse.json()
 
-    for (const tx of monthlyTxs) {
-      const ssTx: StandardTx = {
-        status: 'complete',
-        inputTXID: tx.id,
-        inputAddress: '',
-        inputCurrency: tx.input.currency.toUpperCase(),
-        inputAmount: parseFloat(tx.input.amount),
-        outputAddress: '',
-        outputCurrency: tx.output.currency.toUpperCase(),
-        outputAmount: tx.output.amount.toString(),
-        timestamp: Date.parse(tx.timestamp_executed.concat('Z')) / 1000
+      for (const tx of monthlyTxs) {
+        const ssTx: StandardTx = {
+          status: 'complete',
+          inputTXID: tx.id,
+          inputAddress: '',
+          inputCurrency: tx.input.currency.toUpperCase(),
+          inputAmount: parseFloat(tx.input.amount),
+          outputAddress: '',
+          outputCurrency: tx.output.currency.toUpperCase(),
+          outputAmount: tx.output.amount.toString(),
+          timestamp: Date.parse(tx.timestamp_executed.concat('Z')) / 1000
+        }
+        newTransactions.push(ssTx)
       }
-      newTransactions.push(ssTx)
-    }
 
-    if (monthlyTxs.length < PAGE_SIZE && queryMonth === todayMonth && queryYear === todayYear) {
-      if (queryMonth === '1') {
-        diskCache.offset.lastCheckedMonth = '12'
-        diskCache.offset.lastCheckedYear = bns.sub(queryYear, '1')
+      if (monthlyTxs.length < PAGE_SIZE && queryMonth === todayMonth && queryYear === todayYear) {
+        if (queryMonth === '1') {
+          diskCache.offset.lastCheckedMonth = '12'
+          diskCache.offset.lastCheckedYear = bns.sub(queryYear, '1')
+        } else {
+          diskCache.offset.lastCheckedMonth = bns.sub(queryMonth, '1')
+          diskCache.offset.lastCheckedYear = queryYear
+        }
+        keepQuerying = false
+      } else if (monthlyTxs.length === PAGE_SIZE) {
+        page += 1
       } else {
-        diskCache.offset.lastCheckedMonth = bns.sub(queryMonth, '1')
-        diskCache.offset.lastCheckedYear = queryYear
-      }
-      keepQuerying = false
-    } else if (monthlyTxs.length === PAGE_SIZE) {
-      page += 1
-    } else {
-      page = 1
-      if (bns.lt(queryMonth, '12')) {
-        queryMonth = bns.add(queryMonth, '1')
-      } else {
-        queryMonth = '1'
-        queryYear = bns.add(queryYear, '1')
+        page = 1
+        if (bns.lt(queryMonth, '12')) {
+          queryMonth = bns.add(queryMonth, '1')
+        } else {
+          queryMonth = '1'
+          queryYear = bns.add(queryYear, '1')
+        }
       }
     }
+  } catch (e) {
+    console.log(e)
   }
 
   const out = {
