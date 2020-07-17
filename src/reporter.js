@@ -19,6 +19,7 @@ const { doSimplex } = require('./simplex.js')
 const { doBanxa } = require('./banxa.js')
 const { doBity } = require('./bity.js')
 const { doSwitchain } = require('./switchain.js')
+const { doBitaccessBtm } = require('./bitaccessBtm.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
@@ -106,6 +107,11 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
 
+  const rBtm = await doBitaccessBtm(swapFuncParams).catch(e => {
+    console.error('doBitaccessBtm failed')
+    return {}
+  })
+
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -125,6 +131,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('BAN', rBan)
   printTxDataMap('BITY', rBity)
   printTxDataMap('SWI', rSwi)
+  printTxDataMap('BTM', rBtm)
   console.log(new Date(Date.now()))
 }
 
@@ -309,6 +316,9 @@ async function report (argv: Array<any>) {
     const bogResults = config.bog && config.bog.apiKey
       ? await doSummaryFunction(doBog)
       : {}
+    const btmResults = config.bitaccessBtm && config.bitaccessBtm.affiliateId
+      ? await doSummaryFunction(doBitaccessBtm)
+      : {}
 
     const simResults = await doSummaryFunction(doSimplex)
     const banResults = await doSummaryFunction(doBanxa)
@@ -419,6 +429,11 @@ async function report (argv: Array<any>) {
     console.log('\n***** Bity Daily *****')
     printTxDataMap('BITY', bityResults.daily)
 
+    console.log('\n***** Bitaccess BTM Monthly *****')
+    printTxDataMap('BTM', btmResults.monthly)
+    console.log('\n***** Bitaccess BTM Daily *****')
+    printTxDataMap('BTM', btmResults.daily)
+
     console.log('\n***** Swap Totals Monthly*****')
     printTxDataMap('TTS', results.monthly)
     console.log('\n***** Swap Totals Daily *****')
@@ -436,6 +451,7 @@ async function report (argv: Array<any>) {
     combineResults(fiatResults, simResults)
     combineResults(fiatResults, banResults)
     combineResults(fiatResults, bityResults)
+    combineResults(fiatResults, btmResults)
 
     console.log('\n***** Fiat Totals Monthly *****')
     printTxDataMap('TTF', fiatResults.monthly)
