@@ -36,6 +36,10 @@
     "clientId": "",
     "clientSecret": ""
   },
+  "paytrieCredentials": {
+    "apiKey": "xxx",
+    "secretToken": "xxx"
+  },
   "switchainApiKey" : "",
   "transak_api_secret": "xxx",
   "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"],
