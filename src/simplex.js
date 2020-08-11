@@ -48,7 +48,7 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
         status: 'complete',
         inputTXID: uniqueIdentifier,
         inputAddress: '',
-        inputCurrency: order.currency,
+        inputCurrency: 'USD',
         inputAmount: parseFloat(order.total_amount_usd.replace('$', '').replace(',', '')),
         outputAddress: '',
         outputCurrency: order.crypto_currency,
