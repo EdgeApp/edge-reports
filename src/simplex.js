@@ -7,7 +7,7 @@ const { checkSwapService } = require('./checkSwapService.js')
 const axios = require('axios')
 
 const SIMPLEX_CACHE = './cache/simRaw.json'
-const API_START_DATE = new Date('2020-06-29T00:00:00.000Z').getTime() / 1000
+const API_START_DATE = new Date('2020-08-10T00:00:00.000Z').getTime() / 1000
 
 async function doSimplex (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchSimplex,
@@ -84,8 +84,8 @@ async function fetchSimplex (swapFuncParams: SwapFuncParams) {
           status: 'complete',
           inputTXID: uniqueIdentifier,
           inputAddress: '',
-          inputCurrency: order.currency,
-          inputAmount: parseFloat(order.fiat_total_amount.replace('$', '').replace(',', '')),
+          inputCurrency: 'USD',
+          inputAmount: parseFloat(order.amount_usd),
           outputAddress: '',
           outputCurrency: order.crypto_currency,
           outputAmount: order.amount_crypto,
