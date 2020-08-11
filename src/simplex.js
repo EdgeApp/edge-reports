@@ -1,13 +1,12 @@
 // @flow
 import type { StandardTx, SwapFuncParams } from './checkSwapService.js'
 const js = require('jsonfile')
-const confFileName = './config.json'
-const CONFIG = js.readFileSync(confFileName)
+const fs = require('fs')
 const { checkSwapService } = require('./checkSwapService.js')
-const axios = require('axios')
+const csv = require('csvtojson')
 
 const SIMPLEX_CACHE = './cache/simRaw.json'
-const API_START_DATE = new Date('2020-06-29T00:00:00.000Z').getTime() / 1000
+const SIMPLEX_FOLDER = './cache/simplex'
 
 async function doSimplex (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchSimplex,
@@ -19,101 +18,47 @@ async function doSimplex (swapFuncParams: SwapFuncParams) {
 
 async function fetchSimplex (swapFuncParams: SwapFuncParams) {
   if (!swapFuncParams.useCache) {
-    console.log('Fetching Simplex...')
+    console.log('Fetching Simplex from CSV...')
   }
-  let diskCache = { txs: [], lastTxTimestamp: 0 }
+  let diskCache = { txs: [] }
 
   const transactionMap = {}
   const ssFormatTxs: Array<StandardTx> = []
 
   try {
     diskCache = js.readFileSync(SIMPLEX_CACHE)
-    // console.log('diskCache: ', diskCache)
   } catch (e) {}
 
-  // flag for fresh vs already-populated cache
-  const initialLastTxTimestamp = diskCache.lastTxTimestamp || 0
-  let maxTimestamp = diskCache.lastTxTimestamp || 0
-  let continueFromSyntax = ''
-  let has_more_pages = false
-  let next_page_cursor = ''
-  let retry = 4
+  const files = await fs.readdirSync(SIMPLEX_FOLDER)
+  // console.log('files: ', files)
 
-  try {
-    while (1 && !swapFuncParams.useCache) {
-      // console.log('----------------')
-      // console.log('initiallastTxTimestamp: ', initiallastTxTimestamp)
-      // console.log('lastTxTimestamp: ', lastTxTimestamp)
-      // console.log('maxTimestamp: ', maxTimestamp)
-      // console.log('minTimestamp: ', minTimestamp)
-      if (next_page_cursor) continueFromSyntax = `continue_from=${next_page_cursor}&`
-      const url = `https://turnkey.api.simplex.com/transactions?${continueFromSyntax}limit=1000&starting_at=${initialLastTxTimestamp}`
-      console.log('url: ', url)
-      const csvData = await axios({
-        url,
-        headers: {
-          'X-API-KEY': CONFIG.simplex.apiKey
-        }
-      }).catch(e => {
-        if (!--retry) {
-          throw e
-        }
-        return null
-      })
+  for (const fileName of files) {
+    const filePath = `./cache/simplex/${fileName}`
+    // console.log('filePath is: ', filePath)
+    const csvData = await csv().fromFile(filePath)
 
-      if (!csvData) {
+    for (const order of csvData) {
+      if (!order.total_amount_usd || !order.total_amount_crypto) {
         continue
       }
-
-      has_more_pages = csvData.data.has_more_pages
-      next_page_cursor = csvData.data.next_page_cursor
-
-      const responseTxs = csvData.data.data
-
-      for (const order of responseTxs) {
-        if (!order.fiat_total_amount || !order.amount_crypto) {
-          continue
-        }
-        const timestamp = order.created_at
-        if (timestamp < API_START_DATE) {
-          continue
-        }
-
-        const uniqueIdentifier = order.order_id
-        const ssTx: StandardTx = {
-          status: 'complete',
-          inputTXID: uniqueIdentifier,
-          inputAddress: '',
-          inputCurrency: order.currency,
-          inputAmount: parseFloat(order.fiat_total_amount.replace('$', '').replace(',', '')),
-          outputAddress: '',
-          outputCurrency: order.crypto_currency,
-          outputAmount: order.amount_crypto,
-          timestamp: timestamp
-        }
-
-        if (timestamp > maxTimestamp) maxTimestamp = timestamp
-
-        transactionMap[uniqueIdentifier] = ssTx
-
-        // if transaction is before the cutoff timestamp
-        // then stop the loop
-
-        if (timestamp < initialLastTxTimestamp) {
-          has_more_pages = false
-        }
+      const date = new Date(order.processed_at_utc + ':00.000Z')
+      const timestamp = date.getTime() / 1000
+      const uniqueIdentifier = `${timestamp}-${order.total_amount_crypto.replace('.', '')}`
+      const ssTx: StandardTx = {
+        status: 'complete',
+        inputTXID: uniqueIdentifier,
+        inputAddress: '',
+        inputCurrency: order.currency,
+        inputAmount: parseFloat(order.total_amount_usd.replace('$', '').replace(',', '')),
+        outputAddress: '',
+        outputCurrency: order.crypto_currency,
+        outputAmount: order.total_amount_crypto,
+        timestamp: timestamp
       }
-      if (has_more_pages === false) {
-        console.log('responseTxs.length: ', responseTxs.length)
-        // set the lastTxTimestamp for the cache to two weeks before latest tx
-        diskCache.lastTxTimestamp = maxTimestamp - 60 * 60 * 24 * 7
-        break
-      }
+      // console.log('ssTx: ', ssTx)
+      transactionMap[uniqueIdentifier] = ssTx
     }
-  } catch (error) {
-    console.log('error: ', error)
   }
-
   for (const id in transactionMap) {
     ssFormatTxs.push(transactionMap[id])
     ssFormatTxs.sort((a, b) => a.timestamp - b.timestamp)
