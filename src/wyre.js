@@ -32,9 +32,10 @@ function parseTxStr (txStr) {
     completedAt: txItems[4],
     sourceAmount: txItems[5],
     sourceCurrency: txItems[6],
-    destAmount: txItems[7],
-    destCurrency: txItems[8],
-    failureReason: txItems[9]
+    usdFeeEquiv: txItems[7],
+    destAmount: txItems[8],
+    destCurrency: txItems[9],
+    usdEquiv: txItems[10]
   }
 }
 
