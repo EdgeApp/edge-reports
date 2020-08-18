@@ -62,7 +62,7 @@ function processOrders (orders, ssFormatTxs) {
       const dateTimeParts = origDateTime.split(' ')
       const dateParts = dateTimeParts[0].split('-')
       const month = MONTH_MAP[dateParts[1]]
-      const reformattedDate = `${dateParts[2]}-${month}-${dateParts[0]}T${dateTimeParts[1]}`
+      const reformattedDate = `${dateParts[2]}-${month}-${dateParts[0]}T${dateTimeParts[1]}Z`
 
       // Flip the amounts if the order is a SELL
       let inputAmount = order.fiat_amount
