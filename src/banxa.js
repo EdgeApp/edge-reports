@@ -38,8 +38,8 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
       let date
       if (order['UTC Time']) {
         date = new Date(order['UTC Time'])
-      } else if (order['Completed At (UTC)']) {
-        date = new Date(order['Completed At (UTC)'])
+      } else if (order['Created At (UTC)']) {
+        date = new Date(order['Created At (UTC)'])
       } else {
         continue
       }
