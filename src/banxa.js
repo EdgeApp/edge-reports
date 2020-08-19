@@ -103,25 +103,25 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
   } catch (e) {}
   const ssFormatTxs: Array<StandardTx> = []
 
-  const lastDate = new Date(diskCache.last_date)
+  const cachedLastDate = new Date(diskCache.last_date)
 
   // Go back a week just to make sure you capture any late completing orders
-  lastDate.setTime(lastDate.getTime() - (7 * 86400000))
+  const startQueryDate = new Date(cachedLastDate.getTime() - 7 * 86400000)
 
   const now = new Date()
   const today = new Date(now.toISOString().split('T')[0]).getTime()
 
-  let queryDate = lastDate.toISOString().split('T')[0]
+  let queryDate = startQueryDate.toISOString().split('T')[0]
 
   if (!swapFuncParams.useCache) {
     console.log(`BANXA: Loading orders starting from ${queryDate}`)
     // Loop through the days
-    while (lastDate.getTime() !== today) {
+    while (startQueryDate.getTime() !== today) {
       let page = 1
       const pageLimit = 100
-      queryDate = lastDate.toISOString().split('T')[0]
+      queryDate = startQueryDate.toISOString().split('T')[0]
       // Move last date on 1 day
-      lastDate.setTime(lastDate.getTime() + 86400000)
+      startQueryDate.setTime(startQueryDate.getTime() + 86400000)
       let attempt = 0
 
       // Loop through the pages for this day
@@ -130,12 +130,16 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
 
         let apiResponse
         while (attempt < 3) {
-          console.log(`BANXA: Calling API with date ${queryDate}, result size ${pageLimit} and offset ${page} for attempt ${attempt}`)
+          console.log(
+            `BANXA: Calling API with date ${queryDate}, result size ${pageLimit} and offset ${page} for attempt ${attempt}`
+          )
           apiResponse = await callBanxaAPI(queryDate, pageLimit, page)
           const status = await apiResponse.status
           // Handle the situation where the API is rate limiting the requests
           if (status !== 200) {
-            console.log(`BANXA: Response code ${status}. Retrying after 2 second sleep...`)
+            console.log(
+              `BANXA: Response code ${status}. Retrying after 2 second sleep...`
+            )
             sleep.sleep(2)
             attempt++
           } else {
@@ -147,8 +151,9 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
         if (apiResponse) {
           const ordersData = await apiResponse.json()
 
-          if (ordersData && ordersData.data && ordersData.data.orders.length) orders = ordersData.data.orders
-          else break
+          if (ordersData && ordersData.data && ordersData.data.orders.length) {
+            orders = ordersData.data.orders
+          } else break
 
           processOrders(orders, ssFormatTxs)
 
@@ -163,8 +168,9 @@ async function fetchBanxa (swapFuncParams: SwapFuncParams) {
     }
   }
 
-  diskCache.last_date = queryDate
+  diskCache.last_date = queryDate > cachedLastDate ? queryDate : cachedLastDate
 
+  console.log(`lastDate ${queryDate}`)
   const out = {
     diskCache,
     newTransactions: ssFormatTxs
