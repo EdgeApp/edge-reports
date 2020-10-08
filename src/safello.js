@@ -30,9 +30,9 @@ async function fetchSafello (swapFuncParams: SwapFuncParams) {
   const ssFormatTxs: Array<StandardTx> = []
 
   let offset = 0
-  const url = `https://app.safello.com/v1/partner/get-orders?offset=${offset}`
 
   while (1 && !swapFuncParams.useCache) {
+    const url = `https://app.safello.com/v1/partner/get-orders?offset=${offset}`
     const response = await fetch(url, {
       method: 'GET',
       headers: {
