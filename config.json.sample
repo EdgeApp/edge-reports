@@ -44,5 +44,7 @@
   "switchainApiKey" : "",
   "transak_api_secret": "xxx",
   "coinMarketCapExcludeLookup": ["USD", "EUR", "GBP"],
-  "coinApiExcludeLookup": ["USD", "EUR", "GBP"]
+  "coinApiExcludeLookup": ["USD", "EUR", "GBP"],
+  "sideShiftAffiliateId": "",
+  "sideShiftAffiliateSecret": ""
 }

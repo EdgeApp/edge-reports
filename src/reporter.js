@@ -20,6 +20,7 @@ const { doBanxa } = require('./banxa.js')
 const { doBity } = require('./bity.js')
 const { doSwitchain } = require('./switchain.js')
 const { doPaytrie } = require('./paytrie.js')
+const { doSideShift } = require('./sideshift.js')
 const { bns } = require('biggystring')
 const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
@@ -43,6 +44,10 @@ async function main (swapFuncParams: SwapFuncParams) {
   })
   const rSsh = await doShapeShift(swapFuncParams).catch(e => {
     console.error('doShapeShift failed')
+    return {}
+  })
+  const rXai = await doSideShift(swapFuncParams).catch(e => {
+    console.error('doSideShift failed')
     return {}
   })
   const rLbx = await doLibertyX(swapFuncParams).catch(e => {
@@ -116,6 +121,7 @@ async function main (swapFuncParams: SwapFuncParams) {
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
   printTxDataMap('SSH', rSsh)
+  printTxDataMap('XAI', rXai)
   printTxDataMap('LBX', rLbx)
   printTxDataMap('BIT', rBit)
   printTxDataMap('TOT', rTl)
@@ -274,6 +280,9 @@ async function report (argv: Array<any>) {
     const ssResults = config.shapeShiftToken
       ? await doSummaryFunction(doShapeShift)
       : {}
+    const xaiResults = config.sideShiftAffiliateId
+      ? await doSummaryFunction(doSideShift)
+      : {}
     const faResults = config.faastAffiliateId
       ? await doSummaryFunction(doFaast)
       : {}
@@ -329,6 +338,7 @@ async function report (argv: Array<any>) {
     combineResults(results, chResults)
     combineResults(results, faResults)
     combineResults(results, ssResults)
+    combineResults(results, xaiResults)
     combineResults(results, tlResults)
     combineResults(results, foxResults)
     combineResults(results, csResults)
@@ -359,6 +369,11 @@ async function report (argv: Array<any>) {
     printTxDataMap('SSH', ssResults.daily)
     console.log('\n***** Shapeshift Monthly *****')
     printTxDataMap('SSH', ssResults.monthly)
+
+    console.log('\n***** SideShift.ai Daily *****')
+    printTxDataMap('XAI', xaiResults.daily)
+    console.log('\n***** SideShift.ai Monthly *****')
+    printTxDataMap('XAI', xaiResults.monthly)
 
     console.log('\n***** Coinswitch Daily *****')
     printTxDataMap('CS', csResults.daily)
