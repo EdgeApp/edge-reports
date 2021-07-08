@@ -8,6 +8,12 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CHANGENOW_CACHE = './cache/cnRaw.json'
 
+const CURRENCY_CODE_TRANSCRIPTION = {
+  // exchangeCurrencyCode: edgeCurrencyCode
+  // should be opposite / mirror of exchage-plugins
+  'USDTERC20': 'USDT'
+}
+
 async function doChangenow (swapFuncParams: SwapFuncParams) {
   return checkSwapService(fetchChangenow,
     CHANGENOW_CACHE,
@@ -43,15 +49,25 @@ async function fetchChangenow (swapFuncParams: SwapFuncParams) {
       if (tx.status === 'finished') {
         const date = new Date(tx.updatedAt)
         const timestamp = date.getTime() / 1000
+        let inputCurrency = tx.fromCurrency.toUpperCase()
+        let outputCurrency = tx.toCurrency.toUpperCase()
+        if (CURRENCY_CODE_TRANSCRIPTION[inputCurrency]) {
+          console.log('translating ', inputCurrency, ' to ', CURRENCY_CODE_TRANSCRIPTION[inputCurrency])
+          inputCurrency = CURRENCY_CODE_TRANSCRIPTION[inputCurrency]
+        }
+        if (CURRENCY_CODE_TRANSCRIPTION[outputCurrency]) {
+          console.log('translating ', outputCurrency, ' to ', CURRENCY_CODE_TRANSCRIPTION[outputCurrency])
+          outputCurrency = CURRENCY_CODE_TRANSCRIPTION[outputCurrency]
+        }
 
         const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: tx.payinHash,
           inputAddress: tx.payinAddress,
-          inputCurrency: tx.fromCurrency.toUpperCase(),
+          inputCurrency,
           inputAmount: tx.amountSend,
           outputAddress: tx.payoutAddress,
-          outputCurrency: tx.toCurrency.toUpperCase(),
+          outputCurrency,
           outputAmount: tx.amountReceive.toString(),
           timestamp
         }

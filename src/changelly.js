@@ -8,6 +8,12 @@ const { checkSwapService } = require('./checkSwapService.js')
 
 const CHANGELLY_CACHE = './cache/chRaw.json'
 
+const CURRENCY_CODE_TRANSCRIPTION = {
+  // exchangeCurrencyCode: edgeCurrencyCode
+  // should be opposite / mirror of exchage-plugins
+  'USDT20': 'USDT'
+}
+
 let changelly
 if (config.changellyApiKey && config.changellyApiSecret) {
   changelly = new Changelly(
@@ -76,14 +82,26 @@ async function fetchChangelly (swapFuncParams: SwapFuncParams) {
 
     for (const tx of result.result) {
       if (tx.status === 'finished') {
+        // check if we need to change currencyCode so that rate API will return an actual value
+        let inputCurrency = tx.currencyFrom.toUpperCase()
+        let outputCurrency = tx.currencyTo.toUpperCase()
+        if (CURRENCY_CODE_TRANSCRIPTION[inputCurrency]) {
+          console.log('translating ', inputCurrency, ' to ', CURRENCY_CODE_TRANSCRIPTION[inputCurrency])
+          inputCurrency = CURRENCY_CODE_TRANSCRIPTION[inputCurrency]
+        }
+        if (CURRENCY_CODE_TRANSCRIPTION[outputCurrency]) {
+          console.log('translating ', outputCurrency, ' to ', CURRENCY_CODE_TRANSCRIPTION[outputCurrency])
+          outputCurrency = CURRENCY_CODE_TRANSCRIPTION[outputCurrency]
+        }
+
         const ssTx: StandardTx = {
           status: 'complete',
           inputTXID: tx.payinHash,
           inputAddress: tx.payinAddress,
-          inputCurrency: tx.currencyFrom.toUpperCase(),
+          inputCurrency,
           inputAmount: tx.amountExpectedFrom,
           outputAddress: tx.payoutAddress,
-          outputCurrency: tx.currencyTo.toUpperCase(),
+          outputCurrency,
           outputAmount: tx.amountExpectedTo,
           timestamp: tx.createdAt
         }
