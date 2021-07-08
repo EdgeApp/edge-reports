@@ -47,7 +47,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
     const { contracts } = await fetch('https://api.totle.com/contracts').then((res) => res.json())
     const primaries = contracts.filter(({ type }) => type === 1)
 
-    for (const { address: primaryAddress } of primaries) {
+    await Promise.all(primaries.map(async ({ address: primaryAddress }) => {
       const primary = new web3.eth.Contract(PRIMARY_ABI, primaryAddress)
       const swapCollectionEvents = await primary.getPastEvents('LogSwapCollection', {
         filter: { partnerContract: partnerContractAddress },
@@ -61,7 +61,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
           fromBlock: offset,
           toBlock: 'latest'
         })
-        for (const swapEvent of swapEvents) {
+        await Promise.all(swapEvents.map(async (swapEvent) => {
           const { sourceAsset, destinationAsset, sourceAmount, destinationAmount } = swapEvent.returnValues
 
           const {timestamp} = await web3.eth.getBlock(swapEvent.blockNumber)
@@ -72,7 +72,7 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
           const destinationToken = tokens.find((t) => t.address.toLowerCase() === destinationAsset.toLowerCase())
 
           // Cannot find token
-          if (!sourceToken || !destinationToken) continue
+          if (!sourceToken || !destinationToken) return
           const ssTx: StandardTx = {
             status: 'complete',
             inputTXID: receipt.transactionHash,
@@ -86,15 +86,17 @@ async function fetchTotle (swapFuncParams: SwapFuncParams) {
           }
           // console.log(ssTx)
           ssFormatTxs.push(ssTx)
-        }
+        }))
       }
 
       // console.log(ssFormatTxs.length)
       // console.log('done....')
-    }
+    }))
   } catch (err) {
     console.log(err)
   }
+
+  ssFormatTxs.sort((tx1, tx2) => tx1.timestamp - tx2.timestamp)
 
   diskCache.offset = currentBlockNumber
   const out = {
