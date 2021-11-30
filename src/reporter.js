@@ -1,5 +1,6 @@
 // @flow
 import type { SwapFuncParams, TxDataMap } from './checkSwapService.js'
+const { doExolix } = require('./exolix.js')
 const { doShapeShift } = require('./shapeshift.js')
 const { doChangelly } = require('./changelly.js')
 const { doLibertyX } = require('./libertyx.js')
@@ -25,6 +26,10 @@ const config = require('../config.json')
 const { sprintf } = require('sprintf-js')
 
 async function main (swapFuncParams: SwapFuncParams) {
+  const rEx = await doExolix(swapFuncParams).catch(e => {
+    console.error('doExolix failed')
+    return {}
+  })
   const rChn = await doChangenow(swapFuncParams).catch(e => {
     console.error('doChangenow failed')
     return {}
@@ -112,6 +117,7 @@ async function main (swapFuncParams: SwapFuncParams) {
     return {}
   })
 
+  printTxDataMap('EX', rEx)
   printTxDataMap('CHN', rChn)
   printTxDataMap('CHA', rCha)
   printTxDataMap('FAA', rFaa)
@@ -265,6 +271,9 @@ async function report (argv: Array<any>) {
     const fiatResults: { [string]: TxDataMap } = {}
 
     // swaps (crypto-to-crypto)
+    const exResults = config.exolixApiKey
+      ? await doSummaryFunction(doExolix)
+      : {}
     const cnResults = config.changenowApiKey
       ? await doSummaryFunction(doChangenow)
       : {}
@@ -325,6 +334,7 @@ async function report (argv: Array<any>) {
     const banResults = await doSummaryFunction(doBanxa)
     const bityResults = await doSummaryFunction(doBity)
 
+    combineResults(results, exResults)
     combineResults(results, cnResults)
     combineResults(results, chResults)
     combineResults(results, faResults)
@@ -334,6 +344,11 @@ async function report (argv: Array<any>) {
     combineResults(results, csResults)
     combineResults(results, gxResults)
     combineResults(results, swResults)
+
+    console.log('\n***** Exolix Daily *****')
+    printTxDataMap('EX', exResults.daily)
+    console.log('\n***** Exolix monthly *****')
+    printTxDataMap('EX', exResults.monthly)
 
     console.log('\n***** Change NOW Daily *****')
     printTxDataMap('CHN', cnResults.daily)
